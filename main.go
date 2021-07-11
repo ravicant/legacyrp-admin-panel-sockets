@@ -65,12 +65,12 @@ func main() {
 
 	go startDataLoop()
 
-	log.Println("Starting server on port 8080")
+	log.Println("Starting server on port 8443")
 
 	cert := os.Getenv("SSL_CERT")
 	key := os.Getenv("SSL_KEY")
 
-	err = r.RunTLS(":8080", cert, key)
+	err = r.RunTLS(":8443", cert, key)
 	if err != nil {
 		log.Println("Failed to start TLS server (invalid SSL_CERT or SSL_KEY)")
 		log.Println("Starting non-TLS server on port 8080")
