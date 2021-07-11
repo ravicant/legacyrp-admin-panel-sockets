@@ -10,21 +10,7 @@ import (
 )
 
 type Data struct {
-	Players []struct {
-		Vehicle interface{} `json:"vehicle"`
-		Heading float64     `json:"heading"`
-		Steam   string      `json:"steamIdentifier"`
-		Name    string      `json:"name"`
-		Coords  struct {
-			X float64 `json:"x"`
-			Y float64 `json:"y"`
-			Z float64 `json:"z"`
-		} `json:"coords"`
-		Character *struct {
-			Id       int64  `json:"id"`
-			FullName string `json:"fullName"`
-		} `json:"character"`
-	} `json:"players"`
+	Players []interface{}
 }
 
 var (
