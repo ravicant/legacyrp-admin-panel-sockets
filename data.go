@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"github.com/subosito/gotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"sync"
 	"time"
 )
 
@@ -18,38 +22,47 @@ var (
 )
 
 func startDataLoop() {
-	for {
-		connectionsMutex.Lock()
-		servers := make([]string, 0)
-		for server := range serverConnections {
+	b, _ := ioutil.ReadFile(".env")
+	env := gotenv.Parse(bytes.NewReader(b))
+
+	servers := make([]string, 0)
+	for server := range env {
+		rgx := regexp.MustCompile(`(?m)^c\d+s\d+$`)
+		if rgx.MatchString(server) {
 			servers = append(servers, server)
 		}
-		connectionsMutex.Unlock()
+	}
 
-		for _, server := range servers {
-			connectionsMutex.Lock()
-			count := len(serverConnections[server])
-			connectionsMutex.Unlock()
+	for {
+		var wg sync.WaitGroup
+		for _, s := range servers {
+			wg.Add(1)
 
-			if count > 0 {
+			go func(server string) {
 				data := getData(server)
 
 				var b []byte
 				if data == nil {
 					now := time.Now()
 
-					if lastError[server] == nil || now.Sub(*lastError[server]) > 5*time.Minute {
+					if lastError[server] == nil || now.Sub(*lastError[server]) > 30*time.Minute {
 						log.Println("Failed to load data from " + server)
 						lastError[server] = &now
 					}
 					b, _ = json.Marshal(nil)
 				} else {
 					b, _ = json.Marshal(data.Players)
+
+					logCoordinates(data.Players, server)
 				}
 
 				broadcastToSocket(server, b)
-			}
+
+				wg.Done()
+			}(s)
 		}
+
+		wg.Wait()
 
 		time.Sleep(1 * time.Second)
 	}

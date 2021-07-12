@@ -15,6 +15,8 @@ import (
 )
 
 func main() {
+	_ = os.Setenv("TZ", "UTC")
+
 	err := gotenv.Load(".env")
 	if err != nil {
 		log.Println("Failed to load .env")

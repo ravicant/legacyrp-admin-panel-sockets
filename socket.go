@@ -6,9 +6,7 @@ import (
 	"github.com/rs/xid"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 )
@@ -30,12 +28,6 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Failed to set websocket upgrade: " + err.Error())
-		return
-	}
-
-	servers := strings.Split(os.Getenv("OP_FW_SERVERS"), ",")
-	if len(servers) == 0 {
-		_ = conn.Close()
 		return
 	}
 
@@ -77,6 +69,11 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 
 func broadcastToSocket(server string, data []byte) {
 	connectionsMutex.Lock()
+	connections, ok := serverConnections[server]
+	if !ok || len(connections) == 0 {
+		connectionsMutex.Unlock()
+		return
+	}
 
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
@@ -91,6 +88,12 @@ func broadcastToSocket(server string, data []byte) {
 
 func killConnection(server string, connectionID string) {
 	connectionsMutex.Lock()
+	_, ok := serverConnections[server]
+	if !ok {
+		connectionsMutex.Unlock()
+		return
+	}
+
 	conn := serverConnections[server][connectionID]
 	delete(serverConnections[server], connectionID)
 	connectionsMutex.Unlock()
