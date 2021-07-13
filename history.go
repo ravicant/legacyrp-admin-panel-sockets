@@ -67,7 +67,7 @@ func logCoordinates(players []interface{}, server string) {
 				historyMutex.Lock()
 				_, ok := history[server][identifier]
 				if !ok {
-					history[server][identifier] = loadPlayer(identifier)
+					history[server][identifier] = loadPlayer(server, identifier)
 				}
 
 				_, ok = history[server][identifier][day]
@@ -102,7 +102,7 @@ func logCoordinates(players []interface{}, server string) {
 		}
 
 		if now.Sub(lastSave) > 5*time.Minute {
-			storePlayer(identifier, days)
+			storePlayer(server, identifier, days)
 		}
 	}
 
@@ -120,9 +120,14 @@ func logCoordinates(players []interface{}, server string) {
 	historyMutex.Unlock()
 }
 
-func loadPlayer(identifier string) map[string][]Point {
-	if _, err := os.Stat("history/" + identifier + ".json"); err == nil {
-		b, _ := ioutil.ReadFile("history/" + identifier + ".json")
+func loadPlayer(server, identifier string) map[string][]Point {
+	dir := "history/" + server + "/"
+	file := dir + identifier + ".json"
+
+	_ = os.MkdirAll(dir, 0777)
+
+	if _, err := os.Stat(file); err == nil {
+		b, _ := ioutil.ReadFile(file)
 		var res map[string][]Point
 
 		_ = json.Unmarshal(b, &res)
@@ -133,8 +138,8 @@ func loadPlayer(identifier string) map[string][]Point {
 	return make(map[string][]Point, 0)
 }
 
-func storePlayer(identifier string, list map[string][]Point) {
+func storePlayer(server, identifier string, list map[string][]Point) {
 	b, _ := json.Marshal(list)
 
-	_ = ioutil.WriteFile("history/"+identifier+".json", b, 0777)
+	_ = ioutil.WriteFile("history/"+server+"/"+identifier+".json", b, 0777)
 }
