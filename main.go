@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"regexp"
 	"time"
 )
 
@@ -62,6 +64,15 @@ func main() {
 	r.GET("/map/go/socket", func(c *gin.Context) {
 		loggerWare(c)
 
+		session, err := c.Cookie("legacy_rp_admin_v3_session_store")
+		if err != nil || !validSession(session) {
+			log.Println("Rejected unauthorized login")
+
+			c.Data(401, "text/plain", []byte("Unauthorized"))
+			c.Abort()
+			return
+		}
+
 		handleSocket(c.Writer, c.Request, c)
 	})
 
@@ -82,4 +93,28 @@ func main() {
 			panic(err)
 		}
 	}
+}
+
+func validSession(session string) bool {
+	_ = os.MkdirAll("sessions", 0777)
+	now := time.Now()
+	_ = filepath.Walk("sessions", func(path string, info os.FileInfo, err error) error {
+		if now.Sub(info.ModTime()) > 1*time.Hour {
+			_ = os.RemoveAll(path)
+		}
+		return nil
+	})
+
+	rgx := regexp.MustCompile(`(?mi)[^a-z0-9]`)
+	session = rgx.ReplaceAllString(session, "")
+	if session == "" {
+		return false
+	}
+
+	sessionFile := "sessions/" + session + ".session"
+	if _, err := os.Stat(sessionFile); err != nil {
+		return false
+	}
+
+	return true
 }
