@@ -99,7 +99,7 @@ func validSession(session string) bool {
 	_ = os.MkdirAll("sessions", 0777)
 	now := time.Now()
 	_ = filepath.Walk("sessions", func(path string, info os.FileInfo, err error) error {
-		if now.Sub(info.ModTime()) > 1*time.Hour {
+		if info != nil && now.Sub(info.ModTime()) > 1*time.Hour {
 			_ = os.RemoveAll(path)
 		}
 		return nil

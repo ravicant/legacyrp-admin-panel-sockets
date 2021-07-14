@@ -24,7 +24,7 @@ var (
 	lastSave = time.Unix(0, 0)
 )
 
-func logCoordinates(players []interface{}, server string) {
+func logCoordinates(players []map[string]interface{}, server string) {
 	unix := time.Now().Unix()
 	day := time.Now().Format("2006-01-02")
 	dir := "history/"
@@ -41,28 +41,27 @@ func logCoordinates(players []interface{}, server string) {
 	identifiers := make(map[string]bool, 0)
 
 	for _, player := range players {
-		p, ok := player.(map[string]interface{})
-		if ok && p["coords"] != nil {
-			character, ok := p["character"].(bool)
+		if player["coords"] != nil {
+			character, ok := player["character"].(bool)
 			if ok && !character {
 				continue
 			}
 
-			invisible, ok := p["invisible"].(bool)
+			invisible, ok := player["invisible"].(bool)
 			if ok && invisible {
 				continue
 			}
 
-			raw, ok := p["coords"].(map[string]interface{})
+			raw, ok := player["coords"].(map[string]interface{})
 
-			if ok && p["steamIdentifier"] != nil {
+			if ok && player["steamIdentifier"] != nil {
 				coords := Point{
 					X:    int64(math.Round(raw["x"].(float64))),
 					Y:    int64(math.Round(raw["y"].(float64))),
 					Z:    int64(math.Round(raw["z"].(float64))),
 					Time: unix,
 				}
-				identifier := strings.ReplaceAll(p["steamIdentifier"].(string), ":", "_")
+				identifier := strings.ReplaceAll(player["steamIdentifier"].(string), ":", "_")
 
 				historyMutex.Lock()
 				_, ok := history[server][identifier]

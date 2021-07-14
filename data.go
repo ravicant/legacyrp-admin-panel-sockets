@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/subosito/gotenv"
 	"io/ioutil"
 	"log"
@@ -14,11 +15,19 @@ import (
 )
 
 type Data struct {
-	Players []interface{}
+	Players []map[string]interface{}
+}
+
+type MovementLog struct {
+	Time   int64
+	Coords string
 }
 
 var (
 	lastError = make(map[string]*time.Time)
+
+	lastPosition      = make(map[string]map[string]MovementLog)
+	lastPositionMutex sync.Mutex
 )
 
 func startDataLoop() {
@@ -40,6 +49,8 @@ func startDataLoop() {
 
 			go func(server string) {
 				data := getData(server)
+
+				extraData(server, data)
 
 				var b []byte
 				if data == nil {
@@ -108,4 +119,44 @@ func getData(server string) *Data {
 	}
 
 	return data.Data
+}
+
+func extraData(server string, data *Data) {
+	if data == nil {
+		return
+	}
+
+	lastPositionMutex.Lock()
+	_, ok := lastPosition[server]
+	if !ok {
+		lastPosition[server] = make(map[string]MovementLog)
+	}
+	lastPositionMutex.Unlock()
+
+	now := time.Now().Unix()
+
+	for i, player := range data.Players {
+		coords := player["coords"]
+		if coords != nil {
+			c, ok := coords.(map[string]interface{})
+
+			if ok && c != nil {
+				hash := fmt.Sprintf("%.2f|%.2f", c["x"].(float64), c["y"].(float64))
+				id := player["steamIdentifier"].(string)
+
+				lastPositionMutex.Lock()
+				pos, ok := lastPosition[server][id]
+				if !ok || pos.Coords != hash {
+					pos := MovementLog{
+						Time:   now,
+						Coords: hash,
+					}
+					lastPosition[server][id] = pos
+				}
+				lastPositionMutex.Unlock()
+
+				data.Players[i]["afk"] = now - pos.Time
+			}
+		}
+	}
 }
