@@ -141,7 +141,15 @@ func extraData(server string, data *Data) {
 			c, ok := coords.(map[string]interface{})
 
 			if ok && c != nil {
-				hash := fmt.Sprintf("%.2f|%.2f", c["x"].(float64), c["y"].(float64))
+				x, ok1 := c["x"].(float64)
+				y, ok2 := c["y"].(float64)
+				if !ok1 || !ok2 {
+					b, _ := json.Marshal(c)
+					log.Println("Weird coordinate thingy: " + string(b))
+					continue
+				}
+
+				hash := fmt.Sprintf("%.2f|%.2f", x, y)
 				id := player["steamIdentifier"].(string)
 
 				lastPositionMutex.Lock()
