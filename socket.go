@@ -20,9 +20,14 @@ var (
 		},
 	}
 
-	serverConnections = make(map[string]map[string]*websocket.Conn)
+	serverConnections = make(map[string]map[string]*Connection)
 	connectionsMutex  sync.Mutex
 )
+
+type Connection struct {
+	websocket.Conn
+	Mutex sync.Mutex
+}
 
 func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
@@ -43,9 +48,11 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 
 	connectionsMutex.Lock()
 	if serverConnections[server] == nil {
-		serverConnections[server] = make(map[string]*websocket.Conn)
+		serverConnections[server] = make(map[string]*Connection)
 	}
-	serverConnections[server][connectionID] = conn
+	serverConnections[server][connectionID] = &Connection{
+		Conn: *conn,
+	}
 	connectionsMutex.Unlock()
 
 	go func() {
@@ -77,8 +84,10 @@ func broadcastToSocket(server string, data []byte) {
 
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
+			conn.Mutex.Lock()
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			_ = conn.WriteMessage(websocket.TextMessage, data)
+			conn.Mutex.Unlock()
 		} else {
 			delete(serverConnections[server], id)
 		}
