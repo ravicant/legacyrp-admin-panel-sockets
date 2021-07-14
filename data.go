@@ -146,7 +146,13 @@ func extraData(server string, data *Data) {
 				if !ok1 || !ok2 {
 					b, _ := json.Marshal(c)
 					log.Println("Weird coordinate thingy: " + string(b))
-					continue
+
+					if !ok1 {
+						x = 0
+					}
+					if !ok2 {
+						y = 0
+					}
 				}
 
 				hash := fmt.Sprintf("%.2f|%.2f", x, y)
