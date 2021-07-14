@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-colorable"
 	"github.com/subosito/gotenv"
 	"gitlab.com/milan44/logger"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -49,6 +51,11 @@ func main() {
 
 		os.Exit(0)
 	}()
+
+	b, err := ioutil.ReadFile("afk.json")
+	if err == nil {
+		_ = json.Unmarshal(b, &lastPosition)
+	}
 
 	gin.DefaultWriter = colorable.NewColorableStdout()
 	gin.ForceConsoleColor()

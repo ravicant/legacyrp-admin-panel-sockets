@@ -27,6 +27,7 @@ var (
 	lastError = make(map[string]*time.Time)
 
 	lastPosition      = make(map[string]map[string]MovementLog)
+	lastPositionSave  = time.Unix(0, 0)
 	lastPositionMutex sync.Mutex
 )
 
@@ -173,4 +174,11 @@ func extraData(server string, data *Data) {
 			}
 		}
 	}
+
+	lastPositionMutex.Lock()
+	if time.Now().Sub(lastPositionSave) > 5*time.Minute {
+		b, _ := json.Marshal(lastPosition)
+		_ = ioutil.WriteFile("afk.json", b, 0777)
+	}
+	lastPositionMutex.Unlock()
 }
