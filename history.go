@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"math"
 	"os"
@@ -141,4 +142,48 @@ func storePlayer(server, identifier string, list map[string][]Point) {
 	b, _ := json.Marshal(list)
 
 	_ = ioutil.WriteFile("history/"+server+"/"+identifier+".json", b, 0777)
+}
+
+func handleHistory(c *gin.Context) {
+	if !checkSession(c) {
+		log.Info("Rejected unauthorized login")
+		return
+	}
+
+	server := c.PostForm("server")
+	player := c.PostForm("player")
+	day := c.PostForm("day")
+
+	historyMutex.Lock()
+	_, ok := history[server]
+	historyMutex.Unlock()
+	if !ok {
+		c.AbortWithStatusJSON(400, map[string]interface{}{
+			"status": false,
+			"error":  "Unknown server",
+		})
+		return
+	}
+
+	historyMutex.Lock()
+	_, ok = history[server][player]
+	if !ok {
+		history[server][player] = loadPlayer(server, player)
+	}
+
+	historyData, ok := history[server][player][day]
+	historyMutex.Unlock()
+
+	if !ok {
+		c.AbortWithStatusJSON(200, map[string]interface{}{
+			"status": false,
+			"error":  "No history for user or day",
+		})
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"status": true,
+		"data":   historyData,
+	})
 }

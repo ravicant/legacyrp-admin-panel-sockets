@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
-	"log"
 	"net/http"
 	"regexp"
 	"sync"
@@ -32,7 +31,7 @@ type Connection struct {
 func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Failed to set websocket upgrade: " + err.Error())
+		log.Warning("Failed to set websocket upgrade: " + err.Error())
 		return
 	}
 
@@ -115,5 +114,5 @@ func killConnection(server string, connectionID string) {
 
 	_ = conn.Close()
 
-	log.Println("Disconnected socket client " + ip)
+	log.Info("Disconnected socket client " + ip)
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/subosito/gotenv"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -58,7 +57,7 @@ func startDataLoop() {
 					now := time.Now()
 
 					if lastError[server] == nil || now.Sub(*lastError[server]) > 30*time.Minute {
-						log.Println("Failed to load data from " + server)
+						log.Warning("Failed to load data from " + server)
 						lastError[server] = &now
 					}
 					b, _ = json.Marshal(nil)
@@ -83,7 +82,7 @@ func startDataLoop() {
 func getData(server string) *Data {
 	token := os.Getenv(server)
 	if token == "" {
-		log.Println("No token defined for " + server)
+		log.Error("No token defined for " + server)
 		return nil
 	}
 
@@ -91,7 +90,7 @@ func getData(server string) *Data {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Println("Failed to create request: " + err.Error())
+		log.Error("Failed to create request: " + err.Error())
 		return nil
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -99,13 +98,13 @@ func getData(server string) *Data {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("Failed to do request: " + err.Error())
+		log.Error("Failed to do request: " + err.Error())
 		return nil
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Failed to read body: " + err.Error())
+		log.Error("Failed to read body: " + err.Error())
 		return nil
 	}
 
@@ -115,8 +114,12 @@ func getData(server string) *Data {
 	}
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		log.Println("Failed parse response: " + err.Error())
+		log.Error("Failed parse response: " + err.Error())
 		return nil
+	}
+
+	if data.Status != 200 {
+		log.Warning(fmt.Sprintf("Status code for "+server+" is not 200 (%d)", data.Status))
 	}
 
 	return data.Data
@@ -146,7 +149,7 @@ func extraData(server string, data *Data) {
 				y, ok2 := c["y"].(float64)
 				if !ok1 || !ok2 {
 					b, _ := json.Marshal(c)
-					log.Println("Weird coordinate thingy: " + string(b))
+					log.Debug("Weird coordinate thingy: " + string(b))
 
 					if !ok1 {
 						x = 0
