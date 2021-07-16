@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"math"
@@ -122,6 +123,7 @@ func logCoordinates(players []map[string]interface{}, server string) {
 
 func loadPlayer(server, identifier string) map[string][]Point {
 	dir := "history/" + server + "/"
+	identifier = strings.ReplaceAll(identifier, ".", "")
 	file := dir + identifier + ".json"
 
 	_ = os.MkdirAll(dir, 0777)
@@ -154,6 +156,8 @@ func handleHistory(c *gin.Context) {
 	player := c.PostForm("player")
 	day := c.PostForm("day")
 
+	log.Debug(fmt.Sprintf("server=%s, player=%s, day=%s", server, player, day))
+
 	historyMutex.Lock()
 	_, ok := history[server]
 	historyMutex.Unlock()
@@ -166,6 +170,8 @@ func handleHistory(c *gin.Context) {
 	}
 
 	historyMutex.Lock()
+	player = strings.ReplaceAll(player, ":", "_")
+
 	_, ok = history[server][player]
 	if !ok {
 		history[server][player] = loadPlayer(server, player)
