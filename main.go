@@ -11,14 +11,17 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/exec"
 	"os/signal"
+	"sync"
 	"time"
 )
 
 var (
 	ginLogger gin.HandlerFunc
 	log       logger.ShortLogger
+
+	vehicleMap      map[string]string
+	vehicleMapMutex sync.Mutex
 )
 
 func main() {
@@ -32,14 +35,11 @@ func main() {
 		return
 	}
 
-	if _, err := os.Stat("./tiles"); os.IsNotExist(err) {
-		_ = os.MkdirAll("./tiles", 0777)
-
-		log.Info("Extracting tiles... (This may take a while)")
-		err := exec.Command("tar", "-xvzf", "tiles.tar.gz", "-C", "tiles").Run()
-		if err != nil {
-			log.Warning("Failed to extract tiles")
-		}
+	err = loadJSON("vehicle-map.json", &vehicleMap)
+	if err != nil {
+		log.Error("Failed to load vehicle-map.json")
+		log.ErrorE(err)
+		return
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -102,4 +102,13 @@ func main() {
 			panic(err)
 		}
 	}
+}
+
+func loadJSON(file string, dst *map[string]string) error {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, dst)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/subosito/gotenv"
@@ -82,20 +83,32 @@ func startDataLoop() {
 func getData(server string) *Data {
 	token := os.Getenv(server)
 	if token == "" {
-		log.Error("No token defined for " + server)
+		log.Error(server + " - No token defined")
 		return nil
 	}
 
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
 
+	client := &http.Client{}
+
+	override := os.Getenv(server + "_map")
+	if override != "" {
+		url = "http://" + override + "/op-framework/world.json"
+
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Error("Failed to create request: " + err.Error())
+		log.Error(server + " - Failed to create request: " + err.Error())
 		return nil
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Failed to do request: " + err.Error())
@@ -104,7 +117,7 @@ func getData(server string) *Data {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("Failed to read body: " + err.Error())
+		log.Error(server + " - Failed to read body: " + err.Error())
 		return nil
 	}
 
@@ -114,12 +127,14 @@ func getData(server string) *Data {
 	}
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		log.Error("Failed parse response: " + err.Error())
+		log.Debug(url)
+		log.Debug(string(body))
+		log.Error(server + " - Failed parse response: " + err.Error())
 		return nil
 	}
 
 	if data.Status != 200 {
-		log.Warning(fmt.Sprintf("Status code for "+server+" is not 200 (%d)", data.Status))
+		log.Warning(fmt.Sprintf(server+" - Status code for "+server+" is not 200 (%d)", data.Status))
 	}
 
 	return data.Data
@@ -149,7 +164,7 @@ func extraData(server string, data *Data) {
 				y, ok2 := c["y"].(float64)
 				if !ok1 || !ok2 {
 					b, _ := json.Marshal(c)
-					log.Debug("Weird coordinate thingy: " + string(b))
+					log.Debug(server + " - Weird coordinate thingy: " + string(b))
 
 					if !ok1 {
 						x = 0
@@ -174,6 +189,28 @@ func extraData(server string, data *Data) {
 				lastPositionMutex.Unlock()
 
 				data.Players[i]["afk"] = now - pos.Time
+			}
+		}
+
+		vehicle := player["vehicle"]
+		if vehicle != nil {
+			v, ok := vehicle.(map[string]interface{})
+
+			if ok && v != nil {
+				hash, ok := v["model"].(float64)
+
+				if ok {
+					key := fmt.Sprintf("%d", int64(hash))
+
+					vehicleMapMutex.Lock()
+					replace, ok := vehicleMap[key]
+					vehicleMapMutex.Unlock()
+
+					if ok {
+						v["model"] = replace
+						data.Players[i]["vehicle"] = v
+					}
+				}
 			}
 		}
 	}
