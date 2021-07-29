@@ -43,12 +43,9 @@ func startDataLoop() {
 		}
 	}
 
-	for {
-		var wg sync.WaitGroup
-		for _, s := range servers {
-			wg.Add(1)
-
-			go func(server string) {
+	for _, s := range servers {
+		go func(server string) {
+			for {
 				data := getData(server)
 
 				extraData(server, data)
@@ -70,13 +67,9 @@ func startDataLoop() {
 
 				broadcastToSocket(server, b)
 
-				wg.Done()
-			}(s)
-		}
-
-		wg.Wait()
-
-		time.Sleep(1 * time.Second)
+				time.Sleep(1 * time.Second)
+			}
+		}(s)
 	}
 }
 

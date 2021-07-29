@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
 	"net/http"
+	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -44,6 +45,13 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	connectionID := xid.New().String()
 
 	_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+
+	if os.Getenv(server) == "" {
+		log.Debug("Rejected connection to " + server + " as no token is defined")
+		_ = conn.WriteMessage(websocket.TextMessage, []byte("null")) // Just a small update telling the client there is no data
+		_ = conn.Close()
+		return
+	}
 
 	connectionsMutex.Lock()
 	if serverConnections[server] == nil {
