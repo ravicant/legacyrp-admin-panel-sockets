@@ -114,6 +114,12 @@ func getData(server string) *Data {
 		return nil
 	}
 
+	if resp.StatusCode == 504 {
+		log.Warning("Ignoring " + server + " for 15 minutes due to status being 504 Gateway timeout")
+		time.Sleep(15 * time.Minute)
+		return nil
+	}
+
 	var data struct {
 		Status int64 `json:"statusCode"`
 		Data   *Data `json:"data"`
