@@ -38,7 +38,7 @@ func startDataLoop() {
 	servers := make([]string, 0)
 	for server := range env {
 		rgx := regexp.MustCompile(`(?m)^c\d+s\d+$`)
-		if rgx.MatchString(server) {
+		if rgx.MatchString(server) && os.Getenv(server) != "" {
 			servers = append(servers, server)
 		}
 	}
