@@ -46,7 +46,7 @@ func startDataLoop() {
 	for _, s := range servers {
 		go func(server string) {
 			for {
-				data := getData(server)
+				data, timeout := getData(server)
 
 				extraData(server, data)
 
@@ -67,17 +67,22 @@ func startDataLoop() {
 
 				broadcastToSocket(server, b)
 
+				if timeout != nil {
+					log.Debug(server + " - sleeping for " + timeout.String())
+					time.Sleep(*timeout)
+				}
+
 				time.Sleep(1 * time.Second)
 			}
 		}(s)
 	}
 }
 
-func getData(server string) *Data {
+func getData(server string) (*Data, *time.Duration) {
 	token := os.Getenv(server)
 	if token == "" {
 		log.Error(server + " - No token defined")
-		return nil
+		return nil, nil
 	}
 
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
@@ -98,26 +103,37 @@ func getData(server string) *Data {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Error(server + " - Failed to create request: " + err.Error())
-		return nil
+		return nil, nil
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error("Failed to do request: " + err.Error())
-		return nil
+		log.Error(server + " - Failed to do request: " + err.Error())
+		return nil, nil
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(server + " - Failed to read body: " + err.Error())
-		return nil
+		return nil, nil
 	}
 
-	if resp.StatusCode == 504 {
-		log.Warning("Ignoring " + server + " for 15 minutes due to status being 504 Gateway timeout")
-		time.Sleep(15 * time.Minute)
-		return nil
+	sleep15 := 15 * time.Minute
+	sleep5 := 5 * time.Minute
+	switch resp.StatusCode {
+	case 504:
+		log.Warning(server + " - 504 Gateway timeout (origin error)")
+		return nil, &sleep15
+	case 502:
+		log.Warning(server + " - 502 Bad Gateway (origin error)")
+		return nil, &sleep15
+	case 521:
+		log.Warning(server + " - 521 Origin Down (server down/restarting)")
+		return nil, &sleep5
+	case 522:
+		log.Warning(server + " - 522 Origin Connection Time-out (possibly server down/restarting)")
+		return nil, &sleep5
 	}
 
 	var data struct {
@@ -129,14 +145,14 @@ func getData(server string) *Data {
 		log.Debug(url)
 		log.Debug(string(body))
 		log.Error(server + " - Failed parse response: " + err.Error())
-		return nil
+		return nil, nil
 	}
 
 	if data.Status != 200 {
 		log.Warning(fmt.Sprintf(server+" - Status code for "+server+" is not 200 (%d)", data.Status))
 	}
 
-	return data.Data
+	return data.Data, nil
 }
 
 func extraData(server string, data *Data) {
