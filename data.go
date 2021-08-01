@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/subosito/gotenv"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -31,6 +32,11 @@ var (
 	lastPositionMutex sync.Mutex
 )
 
+type InfoPackage struct {
+	Message string `json:"message"`
+	Status  int    `json:"status"`
+}
+
 func startDataLoop() {
 	b, _ := ioutil.ReadFile(".env")
 	env := gotenv.Parse(bytes.NewReader(b))
@@ -46,7 +52,7 @@ func startDataLoop() {
 	for _, s := range servers {
 		go func(server string) {
 			for {
-				data, timeout := getData(server)
+				data, timeout, info := getData(server)
 
 				extraData(server, data)
 
@@ -58,7 +64,12 @@ func startDataLoop() {
 						log.Warning("Failed to load data from " + server)
 						lastError[server] = &now
 					}
-					b, _ = json.Marshal(nil)
+
+					if info != nil {
+						b, _ = json.Marshal(info)
+					} else {
+						b, _ = json.Marshal(nil)
+					}
 				} else {
 					b, _ = json.Marshal(data.Players)
 
@@ -78,11 +89,11 @@ func startDataLoop() {
 	}
 }
 
-func getData(server string) (*Data, *time.Duration) {
+func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	token := os.Getenv(server)
 	if token == "" {
 		log.Error(server + " - No token defined")
-		return nil, nil
+		return nil, nil, &InfoPackage{"Missing token", http.StatusNotImplemented}
 	}
 
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
@@ -105,20 +116,25 @@ func getData(server string) (*Data, *time.Duration) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Error(server + " - Failed to create request: " + err.Error())
-		return nil, nil
+		return nil, nil, nil
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := client.Do(req)
 	if err != nil {
+		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
+			log.Error(server + " - Connection timed out")
+			return nil, nil, &InfoPackage{"Connection timed out (likely rate-limit)", http.StatusGatewayTimeout}
+		}
+
 		log.Error(server + " - Failed to do request: " + err.Error())
-		return nil, nil
+		return nil, nil, &InfoPackage{"Failed to get data", http.StatusInternalServerError}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(server + " - Failed to read body: " + err.Error())
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	sleep15 := 15 * time.Minute
@@ -126,16 +142,16 @@ func getData(server string) (*Data, *time.Duration) {
 	switch resp.StatusCode {
 	case 504:
 		log.Warning(server + " - 504 Gateway timeout (origin error)")
-		return nil, &sleep15
+		return nil, &sleep15, &InfoPackage{"Gateway timeout", http.StatusServiceUnavailable}
 	case 502:
 		log.Warning(server + " - 502 Bad Gateway (origin error)")
-		return nil, &sleep15
+		return nil, &sleep15, &InfoPackage{"Bad Gateway", http.StatusServiceUnavailable}
 	case 521:
 		log.Warning(server + " - 521 Origin Down (server down/restarting)")
-		return nil, &sleep5
+		return nil, &sleep5, &InfoPackage{"Origin Down", http.StatusServiceUnavailable}
 	case 522:
 		log.Warning(server + " - 522 Origin Connection Time-out (possibly server down/restarting)")
-		return nil, &sleep5
+		return nil, &sleep5, &InfoPackage{"Origin Connection Time-out", http.StatusServiceUnavailable}
 	}
 
 	var data struct {
@@ -147,14 +163,14 @@ func getData(server string) (*Data, *time.Duration) {
 		log.Debug(url)
 		log.Debug(string(body))
 		log.Error(server + " - Failed parse response: " + err.Error())
-		return nil, nil
+		return nil, nil, &InfoPackage{"Invalid response from server", http.StatusBadGateway}
 	}
 
 	if data.Status != 200 {
 		log.Warning(fmt.Sprintf(server+" - Status code for "+server+" is not 200 (%d)", data.Status))
 	}
 
-	return data.Data, nil
+	return data.Data, nil, nil
 }
 
 func extraData(server string, data *Data) {
