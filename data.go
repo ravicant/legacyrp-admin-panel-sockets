@@ -120,7 +120,7 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	time10 := 10 * time.Second
+	time10 := 10 * time.Minute
 	resp, err := client.Do(req)
 	if err != nil {
 		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
