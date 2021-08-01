@@ -87,11 +87,13 @@ func getData(server string) (*Data, *time.Duration) {
 
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 3 * time.Second,
+	}
 
 	override := os.Getenv(server + "_map")
 	if override != "" {
-		url = "http://" + override + "/op-framework/world.json"
+		url = "https://" + override + "/op-framework/world.json"
 
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
