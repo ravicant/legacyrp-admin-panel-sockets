@@ -120,11 +120,12 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
+	time10 := 10 * time.Second
 	resp, err := client.Do(req)
 	if err != nil {
 		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
 			log.Error(server + " - Connection timed out")
-			return nil, nil, &InfoPackage{"Connection timed out (likely rate-limit)", http.StatusGatewayTimeout}
+			return nil, &time10, &InfoPackage{"Connection timed out (likely rate-limit)", http.StatusGatewayTimeout}
 		}
 
 		log.Error(server + " - Failed to do request: " + err.Error())
