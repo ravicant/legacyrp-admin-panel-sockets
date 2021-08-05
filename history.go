@@ -147,7 +147,7 @@ func storePlayer(server, identifier string, list map[string][]Point) {
 }
 
 func handleHistory(c *gin.Context) {
-	if !checkSession(c) {
+	if !checkSession(c, true) {
 		log.Info("Rejected unauthorized login")
 		return
 	}

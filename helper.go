@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func checkSession(c *gin.Context) bool {
+func checkSession(c *gin.Context, jsonResponse bool) bool {
 	ginLogger(c)
 
 	session, err := c.Cookie("legacy_rp_admin_v3_session_store")
@@ -16,7 +16,30 @@ func checkSession(c *gin.Context) bool {
 		session := c.PostForm("token")
 
 		if session == "" || !validSession(session) {
-			c.Data(401, "text/plain", []byte("Unauthorized"))
+			oneTimeToken := c.Query("ott")
+			now := time.Now()
+
+			oneTimeTokenMutex.Lock()
+			v, ok := oneTimeTokens[oneTimeToken]
+			oneTimeTokenMutex.Unlock()
+
+			if ok && now.Sub(v) > 1*time.Minute {
+				oneTimeTokenMutex.Lock()
+				delete(oneTimeTokens, oneTimeToken)
+				oneTimeTokenMutex.Unlock()
+
+				return true
+			}
+
+			if jsonResponse {
+				c.JSON(200, map[string]interface{}{
+					"status": false,
+					"error":  "unauthorized",
+				})
+			} else {
+				c.Data(401, "text/plain", []byte("Unauthorized"))
+			}
+
 			c.Abort()
 			return false
 		}

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-colorable"
+	"github.com/rs/xid"
 	"github.com/subosito/gotenv"
 	"gitlab.com/milan44/logger"
 	"io/ioutil"
@@ -22,6 +23,9 @@ var (
 
 	vehicleMap      map[string]string
 	vehicleMapMutex sync.Mutex
+
+	oneTimeTokens     = make(map[string]time.Time)
+	oneTimeTokenMutex sync.Mutex
 )
 
 func main() {
@@ -75,12 +79,30 @@ func main() {
 	r.Use(static.Serve("/map/go/tiles", static.LocalFile("./tiles", false)))
 
 	r.GET("/map/go/socket", func(c *gin.Context) {
-		if !checkSession(c) {
+		if !checkSession(c, false) {
 			log.Info("Rejected unauthorized login")
 			return
 		}
 
 		handleSocket(c.Writer, c.Request, c)
+	})
+
+	r.GET("/map/go/token", func(c *gin.Context) {
+		if !checkSession(c, true) {
+			log.Info("Rejected unauthorized login")
+			return
+		}
+
+		token := xid.New().String()
+
+		oneTimeTokenMutex.Lock()
+		oneTimeTokens[token] = time.Now()
+		oneTimeTokenMutex.Unlock()
+
+		c.JSON(200, map[string]interface{}{
+			"status": true,
+			"token":  token,
+		})
 	})
 
 	r.POST("/map/go/history", handleHistory)
