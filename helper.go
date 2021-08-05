@@ -14,16 +14,22 @@ func checkSession(c *gin.Context, jsonResponse bool) bool {
 	session, err := c.Cookie("legacy_rp_admin_v3_session_store")
 	if err != nil || !validSession(session) {
 		session := c.PostForm("token")
+		if session == "" {
+			session = c.Query("token")
+		}
 
 		if session == "" || !validSession(session) {
 			oneTimeToken := c.Query("ott")
 			now := time.Now()
 
+			log.Debug(oneTimeToken)
+
 			oneTimeTokenMutex.Lock()
+			log.Debug(oneTimeTokens)
 			v, ok := oneTimeTokens[oneTimeToken]
 			oneTimeTokenMutex.Unlock()
 
-			if ok && now.Sub(v) > 1*time.Minute {
+			if ok && now.Sub(v) < 1*time.Minute {
 				oneTimeTokenMutex.Lock()
 				delete(oneTimeTokens, oneTimeToken)
 				oneTimeTokenMutex.Unlock()

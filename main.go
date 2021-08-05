@@ -72,8 +72,12 @@ func main() {
 
 	r := gin.New()
 
+	corsConf := cors.DefaultConfig()
+	corsConf.AllowWebSockets = true
+	corsConf.AllowAllOrigins = true
+
 	r.Use(gin.Recovery())
-	r.Use(cors.Default())
+	r.Use(cors.New(corsConf))
 	ginLogger = logger.GinLoggerMiddleware()
 
 	r.Use(static.Serve("/map/go/tiles", static.LocalFile("./tiles", false)))
