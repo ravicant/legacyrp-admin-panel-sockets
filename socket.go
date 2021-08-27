@@ -22,6 +22,9 @@ var (
 
 	serverConnections = make(map[string]map[string]*Connection)
 	connectionsMutex  sync.Mutex
+
+	serverErrors      = make(map[string][]byte)
+	serverErrorsMutex sync.Mutex
 )
 
 type Connection struct {
@@ -51,6 +54,15 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 		_ = conn.WriteMessage(websocket.TextMessage, []byte("null")) // Just a small update telling the client there is no data
 		_ = conn.Close()
 		return
+	}
+
+	serverErrorsMutex.Lock()
+	e, ok := serverErrors[server]
+	serverErrorsMutex.Unlock()
+
+	if ok && e != nil {
+		_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		_ = conn.WriteMessage(websocket.TextMessage, e)
 	}
 
 	connectionsMutex.Lock()

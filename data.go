@@ -67,6 +67,10 @@ func startDataLoop() {
 
 					if info != nil {
 						b, _ = json.Marshal(info)
+
+						serverErrorsMutex.Lock()
+						serverErrors[server] = b
+						serverErrorsMutex.Unlock()
 					} else {
 						b, _ = json.Marshal(nil)
 					}
@@ -81,6 +85,10 @@ func startDataLoop() {
 				if timeout != nil {
 					log.Debug(server + " - sleeping for " + timeout.String())
 					time.Sleep(*timeout)
+
+					serverErrorsMutex.Lock()
+					serverErrors[server] = nil
+					serverErrorsMutex.Unlock()
 				}
 
 				time.Sleep(1 * time.Second)
