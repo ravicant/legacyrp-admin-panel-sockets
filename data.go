@@ -78,6 +78,10 @@ func startDataLoop() {
 					b, _ = json.Marshal(data.Players)
 
 					logCoordinates(data.Players, server)
+
+					serverErrorsMutex.Lock()
+					serverErrors[server] = nil
+					serverErrorsMutex.Unlock()
 				}
 
 				broadcastToSocket(server, b)
@@ -85,10 +89,6 @@ func startDataLoop() {
 				if timeout != nil {
 					log.Debug(server + " - sleeping for " + timeout.String())
 					time.Sleep(*timeout)
-
-					serverErrorsMutex.Lock()
-					serverErrors[server] = nil
-					serverErrorsMutex.Unlock()
 				}
 
 				time.Sleep(1 * time.Second)
