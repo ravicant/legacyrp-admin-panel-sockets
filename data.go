@@ -129,15 +129,23 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	time10 := 10 * time.Minute
+	time15s := 10 * time.Second
+
 	resp, err := client.Do(req)
 	if err != nil {
-		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
-			log.Error(server + " - Connection timed out")
-			return nil, &time10, &InfoPackage{"Connection timed out (likely rate-limit)", http.StatusGatewayTimeout}
-		}
+		log.Warning(server + " - Retrying data load in 15 sec")
+		time.Sleep(time15s)
+		resp, err = client.Do(req)
 
-		log.Error(server + " - Failed to do request: " + err.Error())
-		return nil, nil, &InfoPackage{"Failed to get data", http.StatusInternalServerError}
+		if err != nil {
+			if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
+				log.Error(server + " - Connection timed out")
+				return nil, &time10, &InfoPackage{"Connection timed out (likely rate-limit)", http.StatusGatewayTimeout}
+			}
+
+			log.Error(server + " - Failed to do request: " + err.Error())
+			return nil, nil, &InfoPackage{"Failed to get data", http.StatusInternalServerError}
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
