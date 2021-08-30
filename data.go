@@ -249,23 +249,27 @@ func extraData(server string, data *Data) {
 			if ok && v != nil {
 				hash, ok := v["model"].(float64)
 
+				var modelName string
 				if ok {
 					key := fmt.Sprintf("%d", int64(hash))
 
 					vehicleMapMutex.Lock()
 					replace, ok := vehicleMap[key]
+					modelName = replace
 					vehicleMapMutex.Unlock()
 
 					if ok {
 						v["model"] = replace
 					}
 
-					displayMapMutex.Lock()
-					v["name"] = displayMap[v["model"].(string)]
-					displayMapMutex.Unlock()
-
 					data.Players[i]["vehicle"] = v
+				} else if model, ok := v["model"].(string); ok {
+					modelName = model
 				}
+
+				displayMapMutex.Lock()
+				v["name"] = displayMap[modelName]
+				displayMapMutex.Unlock()
 			}
 		}
 	}
