@@ -30,6 +30,9 @@ var (
 	lastPosition      = make(map[string]map[string]MovementLog)
 	lastPositionSave  = time.Unix(0, 0)
 	lastPositionMutex sync.Mutex
+
+	lastInvisible      = make(map[string]map[string]int64)
+	lastInvisibleMutex sync.Mutex
 )
 
 type InfoPackage struct {
@@ -202,6 +205,13 @@ func extraData(server string, data *Data) {
 	}
 	lastPositionMutex.Unlock()
 
+	lastInvisibleMutex.Lock()
+	_, ok = lastInvisible[server]
+	if !ok {
+		lastInvisible[server] = make(map[string]int64)
+	}
+	lastInvisibleMutex.Unlock()
+
 	now := time.Now().Unix()
 
 	for i, player := range data.Players {
@@ -240,6 +250,26 @@ func extraData(server string, data *Data) {
 
 				data.Players[i]["afk"] = now - pos.Time
 			}
+		}
+
+		invisible, ok := player["invisible"].(bool)
+		if ok {
+			id := player["steamIdentifier"].(string)
+
+			lastInvisibleMutex.Lock()
+			t, ok := lastInvisible[server][id]
+
+			if invisible && !ok {
+				lastInvisible[server][id] = now
+				t = now
+			} else if !invisible && ok {
+				delete(lastInvisible[server], id)
+			} else if t == 0 {
+				t = now
+			}
+			lastInvisibleMutex.Unlock()
+
+			data.Players[i]["invisible_since"] = now - t
 		}
 
 		vehicle := player["vehicle"]
