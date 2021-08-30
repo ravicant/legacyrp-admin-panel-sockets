@@ -258,8 +258,13 @@ func extraData(server string, data *Data) {
 
 					if ok {
 						v["model"] = replace
-						data.Players[i]["vehicle"] = v
 					}
+
+					displayMapMutex.Lock()
+					v["name"] = displayMap[v["model"].(string)]
+					displayMapMutex.Unlock()
+
+					data.Players[i]["vehicle"] = v
 				}
 			}
 		}

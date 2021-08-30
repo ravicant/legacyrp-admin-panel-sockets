@@ -24,6 +24,9 @@ var (
 	vehicleMap      map[string]string
 	vehicleMapMutex sync.Mutex
 
+	displayMap      map[string]string
+	displayMapMutex sync.Mutex
+
 	oneTimeTokens     = make(map[string]time.Time)
 	oneTimeTokenMutex sync.Mutex
 )
@@ -42,6 +45,13 @@ func main() {
 	err = loadJSON("vehicle-map.json", &vehicleMap)
 	if err != nil {
 		log.Error("Failed to load vehicle-map.json")
+		log.ErrorE(err)
+		return
+	}
+
+	err = loadJSON("display-map.json", &displayMap)
+	if err != nil {
+		log.Error("Failed to load display-map.json")
 		log.ErrorE(err)
 		return
 	}
