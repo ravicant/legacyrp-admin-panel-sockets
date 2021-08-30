@@ -268,7 +268,7 @@ func extraData(server string, data *Data) {
 				}
 
 				displayMapMutex.Lock()
-				v["name"] = displayMap[modelName]
+				v["name"], ok = displayMap[modelName]
 				displayMapMutex.Unlock()
 			}
 		}
