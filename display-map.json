@@ -819,8 +819,17 @@
     "umoracle": "Unmarked Oracle",
     "polnspeedo": "Transporter",
     "zr1RB": "2018 ZR1 Corvette",
+    
     "1200RTA": "BMW 1200RT",
     "16exp_ems": "Ford Explorer",
     "ambulance6": "F-450 Ambulance",
-    "wheelchair": "Wheelchair"
+    "wheelchair": "Wheelchair",
+    
+    "fibb": "Unmarked Baller",
+    "fibb2": "Unmarked Buffalo",
+    "fibc3": "Unmarked Contendor",
+    "fibd3": "Unmarked Dominator",
+    "fibh": "Unmarked Huntley",
+    "fibk2": "Unmarked Kurama",
+    "fibs": "Unmarked Speedo"
 }
