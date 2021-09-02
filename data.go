@@ -189,7 +189,7 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 		return nil, nil, &InfoPackage{"Invalid response from server", http.StatusBadGateway}
 	}
 
-	switch resp.StatusCode {
+	switch data.Status {
 	case 401:
 		log.Warning(server + " - 401 Unauthorized (route says: invalid token)")
 		return nil, &sleep15, &InfoPackage{"Unauthorized (route)", http.StatusServiceUnavailable}
