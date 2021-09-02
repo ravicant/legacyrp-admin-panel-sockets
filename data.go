@@ -162,7 +162,7 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	switch resp.StatusCode {
 	case 401:
 		log.Warning(server + " - 401 Unauthorized (invalid token?)")
-		return nil, &sleep15, &InfoPackage{"Unauthorized", http.StatusServiceUnavailable}
+		return nil, &sleep15, &InfoPackage{"Unauthorized (server)", http.StatusServiceUnavailable}
 	case 504:
 		log.Warning(server + " - 504 Gateway timeout (origin error)")
 		return nil, &sleep15, &InfoPackage{"Gateway timeout", http.StatusServiceUnavailable}
@@ -187,6 +187,12 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 		log.Debug(string(body))
 		log.Error(server + " - Failed parse response: " + err.Error())
 		return nil, nil, &InfoPackage{"Invalid response from server", http.StatusBadGateway}
+	}
+
+	switch resp.StatusCode {
+	case 401:
+		log.Warning(server + " - 401 Unauthorized (route says: invalid token)")
+		return nil, &sleep15, &InfoPackage{"Unauthorized (route)", http.StatusServiceUnavailable}
 	}
 
 	if data.Status != 200 {
