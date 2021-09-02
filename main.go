@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-colorable"
 	"github.com/rs/xid"
@@ -90,9 +89,7 @@ func main() {
 	r.Use(cors.New(corsConf))
 	ginLogger = logger.GinLoggerMiddleware()
 
-	r.Use(static.Serve("/map/go/tiles", static.LocalFile("./tiles", false)))
-
-	r.GET("/map/go/socket", func(c *gin.Context) {
+	r.GET("/socket", func(c *gin.Context) {
 		if !checkSession(c, false) {
 			log.Info("Rejected unauthorized login")
 			return
@@ -101,7 +98,7 @@ func main() {
 		handleSocket(c.Writer, c.Request, c)
 	})
 
-	r.GET("/map/go/token", func(c *gin.Context) {
+	r.GET("/token", func(c *gin.Context) {
 		if !checkSession(c, true) {
 			log.Info("Rejected unauthorized login")
 			return
@@ -119,24 +116,15 @@ func main() {
 		})
 	})
 
-	r.POST("/map/go/history", handleHistory)
+	r.POST("/history", handleHistory)
 
 	go startDataLoop()
 
-	log.Info("Starting server on port 8443")
+	log.Info("Starting server on port 9999")
 
-	cert := os.Getenv("SSL_CERT")
-	key := os.Getenv("SSL_KEY")
-
-	err = r.RunTLS(":8443", cert, key)
+	err = r.Run(":9999")
 	if err != nil {
-		log.Warning("Failed to start TLS server (invalid SSL_CERT or SSL_KEY)")
-		log.Info("Starting non-TLS server on port 8080")
-
-		err = r.Run(":8080")
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
 }
 
