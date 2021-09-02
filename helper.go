@@ -11,44 +11,38 @@ import (
 func checkSession(c *gin.Context, jsonResponse bool) bool {
 	ginLogger(c)
 
-	session, err := c.Cookie("legacy_rp_admin_v3_session_store")
-	if err != nil || !validSession(session) {
-		session := c.PostForm("token")
-		if session == "" {
-			session = c.Query("token")
-		}
+	session := c.PostForm("token")
+	if session == "" {
+		session = c.Query("token")
+	}
 
-		if session == "" || !validSession(session) {
-			oneTimeToken := c.Query("ott")
-			now := time.Now()
+	if session == "" || !validSession(session) {
+		oneTimeToken := c.Query("ott")
+		now := time.Now()
 
-			log.Debug(oneTimeToken)
+		oneTimeTokenMutex.Lock()
+		v, ok := oneTimeTokens[oneTimeToken]
+		oneTimeTokenMutex.Unlock()
 
+		if ok && now.Sub(v) < 1*time.Minute {
 			oneTimeTokenMutex.Lock()
-			log.Debug(oneTimeTokens)
-			v, ok := oneTimeTokens[oneTimeToken]
+			delete(oneTimeTokens, oneTimeToken)
 			oneTimeTokenMutex.Unlock()
 
-			if ok && now.Sub(v) < 1*time.Minute {
-				oneTimeTokenMutex.Lock()
-				delete(oneTimeTokens, oneTimeToken)
-				oneTimeTokenMutex.Unlock()
-
-				return true
-			}
-
-			if jsonResponse {
-				c.JSON(200, map[string]interface{}{
-					"status": false,
-					"error":  "unauthorized",
-				})
-			} else {
-				c.Data(401, "text/plain", []byte("Unauthorized"))
-			}
-
-			c.Abort()
-			return false
+			return true
 		}
+
+		if jsonResponse {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  "unauthorized",
+			})
+		} else {
+			c.Data(401, "text/plain", []byte("Unauthorized"))
+		}
+
+		c.Abort()
+		return false
 	}
 
 	return true

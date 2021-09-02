@@ -160,6 +160,9 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	sleep15 := 15 * time.Minute
 	sleep5 := 5 * time.Minute
 	switch resp.StatusCode {
+	case 401:
+		log.Warning(server + " - 401 Unauthorized (invalid token?)")
+		return nil, &sleep15, &InfoPackage{"Unauthorized", http.StatusServiceUnavailable}
 	case 504:
 		log.Warning(server + " - 504 Gateway timeout (origin error)")
 		return nil, &sleep15, &InfoPackage{"Gateway timeout", http.StatusServiceUnavailable}

@@ -36,6 +36,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Warning("Failed to set websocket upgrade: " + err.Error())
+		log.Debug(r.Header)
 		return
 	}
 
