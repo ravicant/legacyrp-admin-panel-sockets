@@ -189,14 +189,13 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 		return nil, nil, &InfoPackage{"Invalid response from server", http.StatusBadGateway}
 	}
 
-	switch data.Status {
-	case 401:
-		log.Warning(server + " - 401 Unauthorized (route says: invalid token)")
-		return nil, &sleep15, &InfoPackage{"Unauthorized (route)", http.StatusServiceUnavailable}
-	}
-
 	if data.Status != 200 {
-		log.Warning(fmt.Sprintf(server+" - Status code for "+server+" is not 200 (%d)", data.Status))
+		if data.Status == 401 {
+			log.Warning(server + " - 401 Unauthorized (route says: invalid token)")
+			return nil, &sleep15, &InfoPackage{"Unauthorized (route)", http.StatusServiceUnavailable}
+		}
+
+		log.Warning(fmt.Sprintf(server+" - Status code for "+server+" is not 200 but %d", data.Status))
 	}
 
 	return data.Data, nil, nil
