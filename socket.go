@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
@@ -52,7 +53,12 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 
 	if os.Getenv(server) == "" {
 		log.Debug("Rejected connection to " + server + " as no token is defined")
-		_ = conn.WriteMessage(websocket.TextMessage, []byte("null")) // Just a small update telling the client there is no data
+		b, _ := json.Marshal(InfoPackage{
+			Status:  http.StatusNotFound,
+			Message: "Not found (no token)",
+		})
+
+		_ = conn.WriteMessage(websocket.TextMessage, b) // Just a small update telling the client there is no data
 		_ = conn.Close()
 		return
 	}
