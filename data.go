@@ -25,7 +25,8 @@ type MovementLog struct {
 }
 
 var (
-	lastError = make(map[string]*time.Time)
+	lastError      = make(map[string]*time.Time)
+	lastErrorMutex sync.Mutex
 
 	lastPosition      = make(map[string]map[string]MovementLog)
 	lastPositionSave  = time.Unix(0, 0)
@@ -63,10 +64,12 @@ func startDataLoop() {
 				if data == nil {
 					now := time.Now()
 
+					lastErrorMutex.Lock()
 					if lastError[server] == nil || now.Sub(*lastError[server]) > 30*time.Minute {
 						log.Warning("Failed to load data from " + server)
 						lastError[server] = &now
 					}
+					lastErrorMutex.Unlock()
 
 					if info != nil {
 						b, _ = json.Marshal(info)
