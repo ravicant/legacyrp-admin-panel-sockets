@@ -119,6 +119,7 @@ func main() {
 	r.POST("/history", handleHistory)
 
 	go startDataLoop()
+	go startDutyLoop()
 
 	cert := os.Getenv("SSL_CERT")
 	key := os.Getenv("SSL_KEY")

@@ -34,6 +34,9 @@ var (
 
 	lastInvisible      = make(map[string]map[string]int64)
 	lastInvisibleMutex sync.Mutex
+
+	lastDuty      = make(map[string]OnDutyList)
+	lastDutyMutex sync.Mutex
 )
 
 type InfoPackage struct {
@@ -81,7 +84,19 @@ func startDataLoop() {
 						b, _ = json.Marshal(nil)
 					}
 				} else {
-					b, _ = json.Marshal(data.Players)
+					lastDutyMutex.Lock()
+					last, ok := lastDuty[server]
+					lastDutyMutex.Unlock()
+
+					if !ok {
+						last.Police = []string{}
+						last.EMS = []string{}
+					}
+
+					b, _ = json.Marshal(map[string]interface{}{
+						"players": data.Players,
+						"on_duty": last,
+					})
 
 					logCoordinates(data.Players, server)
 
