@@ -99,6 +99,7 @@ func startDataLoop() {
 							"p": last.Police,
 							"e": last.EMS,
 						},
+						"t": "asdf",
 					})
 
 					logCoordinates(data.Players, server)
