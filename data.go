@@ -94,8 +94,11 @@ func startDataLoop() {
 					}
 
 					b, _ = json.Marshal(map[string]interface{}{
-						"players": data.Players,
-						"on_duty": last,
+						"p": CompressPlayers(data.Players),
+						"d": map[string][]string{
+							"p": last.Police,
+							"e": last.EMS,
+						},
 					})
 
 					logCoordinates(data.Players, server)
