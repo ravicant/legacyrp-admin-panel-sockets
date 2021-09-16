@@ -112,7 +112,7 @@ func broadcastToSocket(server string, data []byte) {
 		if conn != nil {
 			conn.Mutex.Lock()
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			_ = conn.WriteMessage(websocket.TextMessage, data)
+			_ = conn.WriteMessage(websocket.BinaryMessage, data)
 			conn.Mutex.Unlock()
 		} else {
 			delete(serverConnections[server], id)

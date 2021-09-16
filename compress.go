@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"bytes"
+	"compress/gzip"
+	"fmt"
+)
 
 type CCharacter struct {
 	Dead     bool   `json:"a,omitempty"`
@@ -171,4 +175,21 @@ func getMap(key string, m map[string]interface{}) map[string]interface{} {
 	}
 
 	return nil
+}
+
+func gzipBytes(b []byte) []byte {
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+
+	_, err := w.Write(b)
+	if err != nil {
+		log.Error("GZIP write failed: " + err.Error())
+	}
+
+	err = w.Close()
+	if err != nil {
+		log.Error("GZIP close failed: " + err.Error())
+	}
+
+	return buf.Bytes()
 }

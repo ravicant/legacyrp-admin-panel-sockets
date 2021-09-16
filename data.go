@@ -108,7 +108,7 @@ func startDataLoop() {
 					serverErrorsMutex.Unlock()
 				}
 
-				broadcastToSocket(server, b)
+				broadcastToSocket(server, gzipBytes(b))
 
 				if timeout != nil {
 					log.Debug(server + " - sleeping for " + timeout.String())
