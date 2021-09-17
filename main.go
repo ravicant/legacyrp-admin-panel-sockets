@@ -116,8 +116,6 @@ func main() {
 		})
 	})
 
-	r.POST("/history", handleHistory)
-
 	go startDataLoop()
 	go startDutyLoop()
 

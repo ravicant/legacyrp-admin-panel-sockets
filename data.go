@@ -101,8 +101,6 @@ func startDataLoop() {
 						},
 					})
 
-					logCoordinates(data.Players, server)
-
 					serverErrorsMutex.Lock()
 					serverErrors[server] = nil
 					serverErrorsMutex.Unlock()
@@ -243,6 +241,7 @@ func extraData(server string, data *Data) {
 
 	now := time.Now().Unix()
 
+	validIDs := make(map[string]bool, 0)
 	for i, player := range data.Players {
 		coords := player["coords"]
 		if coords != nil {
@@ -265,6 +264,8 @@ func extraData(server string, data *Data) {
 
 				hash := fmt.Sprintf("%.2f|%.2f", x, y)
 				id := player["steamIdentifier"].(string)
+
+				validIDs[id] = true
 
 				lastPositionMutex.Lock()
 				pos, ok := lastPosition[server][id]
@@ -333,7 +334,21 @@ func extraData(server string, data *Data) {
 		}
 	}
 
+	lastInvisibleMutex.Lock()
+	for id := range lastInvisible[server] {
+		if !validIDs[id] {
+			delete(lastInvisible[server], id)
+		}
+	}
+	lastInvisibleMutex.Unlock()
+
 	lastPositionMutex.Lock()
+	for id := range lastPosition[server] {
+		if !validIDs[id] {
+			delete(lastPosition[server], id)
+		}
+	}
+
 	if time.Now().Sub(lastPositionSave) > 5*time.Minute {
 		b, _ := json.Marshal(lastPosition)
 		_ = ioutil.WriteFile("afk.json", b, 0777)
