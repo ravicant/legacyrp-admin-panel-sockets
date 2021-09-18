@@ -93,6 +93,8 @@ func getMovementData(m map[string]interface{}) string {
 			}
 
 			return str
+		} else {
+			log.Warning("Unable to read '" + fmt.Sprint(c) + "' (coords) as xyz")
 		}
 	}
 
@@ -107,6 +109,8 @@ func getFloat64(key string, m map[string]interface{}) float64 {
 
 		if ok {
 			return f
+		} else {
+			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as float64")
 		}
 	}
 
@@ -129,6 +133,8 @@ func getInt64(key string, m map[string]interface{}) int64 {
 
 		if ok {
 			return i
+		} else {
+			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as int64")
 		}
 	}
 
@@ -143,6 +149,8 @@ func getString(key string, m map[string]interface{}) string {
 
 		if ok {
 			return s
+		} else {
+			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as string")
 		}
 	}
 
@@ -157,6 +165,8 @@ func getBool(key string, m map[string]interface{}) bool {
 
 		if ok {
 			return b
+		} else {
+			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as bool")
 		}
 	}
 
@@ -171,6 +181,11 @@ func getMap(key string, m map[string]interface{}) map[string]interface{} {
 
 		if ok {
 			return m
+		} else {
+			_, ok = v.(bool)
+			if !ok {
+				log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as map or bool")
+			}
 		}
 	}
 
