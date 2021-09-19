@@ -94,7 +94,7 @@ func startDataLoop() {
 					}
 
 					b, _ = json.Marshal(map[string]interface{}{
-						"p": CompressPlayers(data.Players),
+						"p": CompressPlayers(server, data.Players),
 						"d": map[string][]string{
 							"p": last.Police,
 							"e": last.EMS,
@@ -243,44 +243,8 @@ func extraData(server string, data *Data) {
 
 	validIDs := make(map[string]bool, 0)
 	for i, player := range data.Players {
-		coords := player["coords"]
-		if coords != nil {
-			c, ok := coords.(map[string]interface{})
-
-			if ok && c != nil {
-				x, ok1 := c["x"].(float64)
-				y, ok2 := c["y"].(float64)
-				if !ok1 || !ok2 {
-					b, _ := json.Marshal(c)
-					log.Debug(server + " - Weird coordinate thingy: " + string(b))
-
-					if !ok1 {
-						x = 0
-					}
-					if !ok2 {
-						y = 0
-					}
-				}
-
-				hash := fmt.Sprintf("%.2f|%.2f", x, y)
-				id := player["steamIdentifier"].(string)
-
-				validIDs[id] = true
-
-				lastPositionMutex.Lock()
-				pos, ok := lastPosition[server][id]
-				if !ok || pos.Coords != hash {
-					pos := MovementLog{
-						Time:   now,
-						Coords: hash,
-					}
-					lastPosition[server][id] = pos
-				}
-				lastPositionMutex.Unlock()
-
-				data.Players[i]["afk"] = now - pos.Time
-			}
-		}
+		id := player["steamIdentifier"].(string)
+		validIDs[id] = true
 
 		invisible, ok := player["invisible"].(bool)
 		if ok {

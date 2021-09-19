@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"time"
 )
 
 type CCharacter struct {
@@ -32,7 +33,7 @@ type CPlayer struct {
 	Vehicle        *CVehicle   `json:"i,omitempty"`
 }
 
-func CompressPlayers(players []map[string]interface{}) []CPlayer {
+func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
 	compressed := make([]CPlayer, len(players))
 
 	for i, p := range players {
@@ -59,7 +60,7 @@ func CompressPlayers(players []map[string]interface{}) []CPlayer {
 		}
 
 		compressed[i] = CPlayer{
-			AFK:            getInt64("afk", p),
+			AFK:            0,
 			Character:      c,
 			Movement:       getMovementData(p),
 			Invisible:      getBool("invisible", p),
@@ -69,6 +70,23 @@ func CompressPlayers(players []map[string]interface{}) []CPlayer {
 			Steam:          getString("steamIdentifier", p),
 			Vehicle:        v,
 		}
+
+		hash := compressed[i].Movement
+		id := compressed[i].Steam
+		now := time.Now().Unix()
+
+		lastPositionMutex.Lock()
+		pos, ok := lastPosition[server][id]
+		if !ok || pos.Coords != hash {
+			pos := MovementLog{
+				Time:   now,
+				Coords: hash,
+			}
+			lastPosition[server][id] = pos
+		}
+		lastPositionMutex.Unlock()
+
+		compressed[i].AFK = now - pos.Time
 	}
 
 	return compressed
