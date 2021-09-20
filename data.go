@@ -275,7 +275,7 @@ func extraData(server string, data *Data) {
 
 				var modelName string
 				if ok {
-					key := fmt.Sprintf("%d", int64(hash))
+					key := fmt.Sprintf("%.0f", hash)
 
 					vehicleMapMutex.Lock()
 					replace, ok := vehicleMap[key]
@@ -284,6 +284,8 @@ func extraData(server string, data *Data) {
 
 					if ok {
 						v["model"] = replace
+					} else {
+						log.Warning(fmt.Sprintf("No hash mapping found for hash %s", key))
 					}
 
 					data.Players[i]["vehicle"] = v
@@ -294,6 +296,10 @@ func extraData(server string, data *Data) {
 				displayMapMutex.Lock()
 				v["name"], ok = displayMap[modelName]
 				displayMapMutex.Unlock()
+
+				if !ok {
+					log.Warning(fmt.Sprintf("No name mapping found for model %s", modelName))
+				}
 			}
 		}
 	}

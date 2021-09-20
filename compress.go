@@ -172,7 +172,6 @@ func getString(key string, m map[string]interface{}, tryFloat bool) string {
 				f, ok := v.(float64)
 				if ok {
 					s = fmt.Sprintf("%.0f", f)
-					log.Debug(fmt.Sprintf("Wanted string but read float (%s, source: %s): %s", key, m["source"], s))
 
 					return s
 				}
