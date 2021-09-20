@@ -42,7 +42,7 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		if character != nil {
 			c = &CCharacter{
 				Dead:     getBool("dead", character),
-				FullName: getString("fullName", character),
+				FullName: getString("fullName", character, false),
 				ID:       getInt64("id", character),
 				InShell:  getBool("inShell", character),
 			}
@@ -54,8 +54,8 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 			v = &CVehicle{
 				Driving: getBool("driving", vehicle),
 				ID:      getInt64("id", vehicle),
-				Model:   getString("model", vehicle),
-				Name:    getString("name", vehicle),
+				Model:   getString("model", vehicle, true),
+				Name:    getString("name", vehicle, false),
 			}
 		}
 
@@ -65,9 +65,9 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 			Movement:       getMovementData(p),
 			Invisible:      getBool("invisible", p),
 			InvisibleSince: getInt64("invisible_since", p),
-			Name:           getString("name", p),
+			Name:           getString("name", p, false),
 			Source:         getInt64("source", p),
-			Steam:          getString("steamIdentifier", p),
+			Steam:          getString("steamIdentifier", p, false),
 			Vehicle:        v,
 		}
 
@@ -159,7 +159,7 @@ func getInt64(key string, m map[string]interface{}) int64 {
 	return 0
 }
 
-func getString(key string, m map[string]interface{}) string {
+func getString(key string, m map[string]interface{}, tryFloat bool) string {
 	v, ok := m[key]
 
 	if ok && v != nil {
@@ -168,8 +168,17 @@ func getString(key string, m map[string]interface{}) string {
 		if ok {
 			return s
 		} else {
+			if tryFloat {
+				f, ok := v.(float64)
+				if ok {
+					s = fmt.Sprintf("%f", f)
+					log.Debug("Wanted string but read float (" + key + "): " + s)
+
+					return s
+				}
+			}
+
 			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as string")
-			log.Warning(fmt.Sprintf("%f", v))
 		}
 	}
 
