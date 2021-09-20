@@ -58,7 +58,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 			Message: "Not found (no token)",
 		})
 
-		_ = conn.WriteMessage(websocket.TextMessage, b) // Just a small update telling the client there is no data
+		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(b)) // Just a small update telling the client there is no data
 		_ = conn.Close()
 		return
 	}
@@ -69,7 +69,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 
 	if ok && e != nil {
 		_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		_ = conn.WriteMessage(websocket.TextMessage, e)
+		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(e))
 	}
 
 	connectionsMutex.Lock()
