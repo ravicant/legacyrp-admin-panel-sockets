@@ -169,6 +169,7 @@ func getString(key string, m map[string]interface{}) string {
 			return s
 		} else {
 			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as string")
+			log.Warning(fmt.Sprintf("%f", v))
 		}
 	}
 
