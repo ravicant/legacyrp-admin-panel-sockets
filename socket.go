@@ -54,8 +54,8 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 
 	cluster := c.Query("cluster")
-	if strings.HasPrefix(server, cluster) {
-		log.Debug("Rejected connection to " + server + " as no cluster is invalid")
+	if !strings.HasPrefix(server, cluster) {
+		log.Debug("Rejected connection to " + server + " as cluster is invalid")
 		b, _ := json.Marshal(InfoPackage{
 			Status:  http.StatusUnauthorized,
 			Message: "Cluster invalid",
