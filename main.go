@@ -52,6 +52,8 @@ func main() {
 		return
 	}
 
+	log.Debug("Using '" + SessionDirectory + "' for sessions")
+
 	err = loadJSON("vehicle-map.json", &vehicleMap)
 	if err != nil {
 		log.Error("Failed to load vehicle-map.json")
