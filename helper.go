@@ -56,6 +56,7 @@ func validSession(session string) bool {
 
 	sessionFile := SessionDirectory + "/" + session + ".session"
 	if _, err := os.Stat(sessionFile); err != nil {
+		log.Debug("Unable to find '" + sessionFile + "'")
 		return false
 	}
 
