@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -30,7 +31,8 @@ var (
 
 type Connection struct {
 	websocket.Conn
-	Mutex sync.Mutex
+	Mutex   sync.Mutex
+	Cluster string
 }
 
 func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
@@ -51,6 +53,19 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 
 	_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 
+	cluster := c.Query("cluster")
+	if strings.HasPrefix(server, cluster) {
+		log.Debug("Rejected connection to " + server + " as no cluster is invalid")
+		b, _ := json.Marshal(InfoPackage{
+			Status:  http.StatusUnauthorized,
+			Message: "Cluster invalid",
+		})
+
+		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(b))
+		_ = conn.Close()
+		return
+	}
+
 	if os.Getenv(server) == "" {
 		log.Debug("Rejected connection to " + server + " as no token is defined")
 		b, _ := json.Marshal(InfoPackage{
@@ -58,7 +73,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 			Message: "Not found (no token)",
 		})
 
-		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(b)) // Just a small update telling the client there is no data
+		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(b))
 		_ = conn.Close()
 		return
 	}
@@ -77,7 +92,8 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 		serverConnections[server] = make(map[string]*Connection)
 	}
 	serverConnections[server][connectionID] = &Connection{
-		Conn: *conn,
+		Conn:    *conn,
+		Cluster: cluster,
 	}
 	connectionsMutex.Unlock()
 

@@ -27,11 +27,16 @@ var (
 	displayMap      map[string]string
 	displayMapMutex sync.Mutex
 
-	oneTimeTokens     = make(map[string]time.Time)
+	oneTimeTokens     = make(map[string]OTT)
 	oneTimeTokenMutex sync.Mutex
 
 	SessionDirectory string
 )
+
+type OTT struct {
+	time    time.Time
+	cluster string
+}
 
 func main() {
 	_ = os.Setenv("TZ", "UTC")
@@ -120,7 +125,10 @@ func main() {
 		token := xid.New().String()
 
 		oneTimeTokenMutex.Lock()
-		oneTimeTokens[token] = time.Now()
+		oneTimeTokens[token] = OTT{
+			time:    time.Now(),
+			cluster: c.Query("cluster"),
+		}
 		oneTimeTokenMutex.Unlock()
 
 		c.JSON(200, map[string]interface{}{

@@ -15,7 +15,9 @@ func checkSession(c *gin.Context, jsonResponse bool) bool {
 		session = c.Query("token")
 	}
 
-	if session == "" || !validSession(session) {
+	cluster := c.Query("cluster")
+
+	if session == "" || !validSession(session, cluster) {
 		oneTimeToken := c.Query("ott")
 		now := time.Now()
 
@@ -23,7 +25,7 @@ func checkSession(c *gin.Context, jsonResponse bool) bool {
 		v, ok := oneTimeTokens[oneTimeToken]
 		oneTimeTokenMutex.Unlock()
 
-		if ok && now.Sub(v) < 1*time.Minute {
+		if ok && now.Sub(v.time) < 1*time.Minute && v.cluster == cluster {
 			oneTimeTokenMutex.Lock()
 			delete(oneTimeTokens, oneTimeToken)
 			oneTimeTokenMutex.Unlock()
@@ -47,14 +49,14 @@ func checkSession(c *gin.Context, jsonResponse bool) bool {
 	return true
 }
 
-func validSession(session string) bool {
+func validSession(session, cluster string) bool {
 	rgx := regexp.MustCompile(`(?mi)[^a-z0-9]`)
 	session = rgx.ReplaceAllString(session, "")
 	if session == "" {
 		return false
 	}
 
-	sessionFile := SessionDirectory + "/" + session + ".session"
+	sessionFile := SessionDirectory + "/" + cluster + session + ".session"
 	if _, err := os.Stat(sessionFile); err != nil {
 		log.Debug("Unable to find '" + sessionFile + "'")
 		return false
