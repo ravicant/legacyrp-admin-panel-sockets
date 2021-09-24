@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,6 +29,8 @@ var (
 
 	oneTimeTokens     = make(map[string]time.Time)
 	oneTimeTokenMutex sync.Mutex
+
+	SessionDirectory string
 )
 
 func main() {
@@ -38,6 +41,14 @@ func main() {
 	err := gotenv.Load(".env")
 	if err != nil {
 		log.Error("Failed to load .env")
+		return
+	}
+
+	root := strings.TrimRight(os.Getenv("PanelRoot"), string(os.PathSeparator))
+	SessionDirectory = root + "/storage/framework/session_storage"
+	stat, err := os.Stat(SessionDirectory)
+	if err != nil || !stat.IsDir() {
+		log.Error("Failed to read PanelRoot '" + SessionDirectory + "'")
 		return
 	}
 
