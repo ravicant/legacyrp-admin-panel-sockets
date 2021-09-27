@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -68,4 +69,27 @@ func logCoordsForPlayer(server, steam string, player map[string]interface{}) err
 	}
 
 	return nil
+}
+
+func doHistoryCleanup() error {
+	_ = os.MkdirAll("./history/", 0777)
+
+	return filepath.Walk("./history", func(server string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return filepath.Walk(server, func(day string, dayInfo os.FileInfo, err error) error {
+				if dayInfo != nil && dayInfo.IsDir() {
+					t, err := time.Parse("2006-01-02", dayInfo.Name())
+
+					if err == nil && time.Now().Sub(t) > 24*10*time.Hour { // Delete if older than 10 days
+						log.Info("Removing historic entries '" + day + "'")
+						return os.RemoveAll(day)
+					}
+				}
+
+				return err
+			})
+		}
+
+		return err
+	})
 }

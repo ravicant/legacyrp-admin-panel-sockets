@@ -93,6 +93,8 @@ func main() {
 		_ = json.Unmarshal(b, &lastPosition)
 	}
 
+	_ = doHistoryCleanup()
+
 	gin.DefaultWriter = colorable.NewColorableStdout()
 	gin.ForceConsoleColor()
 	gin.SetMode(gin.ReleaseMode)
