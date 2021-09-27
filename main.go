@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -136,6 +137,38 @@ func main() {
 		c.JSON(200, map[string]interface{}{
 			"status": true,
 			"token":  token,
+		})
+	})
+
+	r.GET("/history/heatmap/:server/:day", func(c *gin.Context) {
+		if !checkSession(c, true) {
+			log.Info("Rejected unauthorized login")
+			return
+		}
+
+		server := c.Param("server")
+		day := c.Param("day")
+
+		_, dayErr := time.Parse("2006-01-02", day)
+		rgx := regexp.MustCompile(`(?m)^c\d+s\d+$`)
+		if !rgx.MatchString(server) || dayErr != nil {
+			c.JSON(400, map[string]interface{}{
+				"status": false,
+				"error":  "invalid server or day",
+			})
+		}
+
+		heat, err := getHeatMapForDay(server, day)
+		if err != nil {
+			c.JSON(400, map[string]interface{}{
+				"status": false,
+				"error":  err.Error(),
+			})
+		}
+
+		c.JSON(200, map[string]interface{}{
+			"status": true,
+			"data":   heat,
 		})
 	})
 
