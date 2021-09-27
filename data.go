@@ -302,6 +302,11 @@ func extraData(server string, data *Data) {
 				}
 			}
 		}
+
+		err := logCoordsForPlayer(server, id, player)
+		if err != nil {
+			log.Warning("Failed to log historic data for '" + id + "': " + err.Error())
+		}
 	}
 
 	lastInvisibleMutex.Lock()
