@@ -152,14 +152,22 @@ func getHeatMapForDay(server, day string) (map[string]int64, error) {
 		return nil
 	})
 
+	max := int64(0)
 	for key, value := range heatmap {
 		// Just some minor cleanup so we don't have to send such huge amounts of data
-		if value <= 15 {
+		if value <= 10 {
 			delete(heatmap, key)
+		} else if value > max {
+			max = value
 		}
 	}
 
-	return heatmap, err
+	normalizedHeatMap := make(map[string]int64)
+	for key, value := range heatmap {
+		normalizedHeatMap[key] = int64(math.Round((float64(max) / float64(value)) * 100))
+	}
+
+	return normalizedHeatMap, err
 }
 
 func resolutionDecrease(x, y, resolution float64) (float64, float64) {
