@@ -137,7 +137,7 @@ func getHeatMapForDay(server, day string) (map[string]int64, error) {
 					y, yErr := strconv.ParseFloat(elements[3], 64)
 
 					if xErr == nil && yErr == nil {
-						x, y = resolutionDecrease(x, y, 5)
+						x, y = resolutionDecrease(x, y, 10)
 
 						key := fmt.Sprintf("%.0f/%.0f", x, y)
 
@@ -151,6 +151,13 @@ func getHeatMapForDay(server, day string) (map[string]int64, error) {
 
 		return nil
 	})
+
+	for key, value := range heatmap {
+		// Just some minor cleanup so we don't have to send such huge amounts of data
+		if value <= 15 {
+			delete(heatmap, key)
+		}
+	}
 
 	return heatmap, err
 }
