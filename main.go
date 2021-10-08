@@ -158,6 +158,7 @@ func main() {
 				"status": false,
 				"error":  "invalid server or day",
 			})
+			return
 		}
 
 		heat, err := getHeatMapForDay(server, day)
@@ -166,6 +167,7 @@ func main() {
 				"status": false,
 				"error":  err.Error(),
 			})
+			return
 		}
 
 		c.JSON(200, map[string]interface{}{
