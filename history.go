@@ -153,11 +153,8 @@ func getHeatMapForDay(server, day string) (map[string]float64, error) {
 	})
 
 	max := int64(0)
-	for key, value := range heatmap {
-		// Just some minor cleanup so we don't have to send such huge amounts of data
-		if value <= 10 {
-			delete(heatmap, key)
-		} else if value > max {
+	for _, value := range heatmap {
+		if value > max {
 			max = value
 		}
 	}
@@ -166,6 +163,11 @@ func getHeatMapForDay(server, day string) (map[string]float64, error) {
 	for key, value := range heatmap {
 		// calculate percentage between 0 and 100 and round to 2 decimal places
 		normalizedHeatMap[key] = math.Round((float64(value)/float64(max))*10000) / 100
+
+		// Just some minor cleanup so we don't have to send such huge amounts of data
+		if normalizedHeatMap[key] < 1 {
+			delete(normalizedHeatMap, key)
+		}
 	}
 
 	return normalizedHeatMap, err
