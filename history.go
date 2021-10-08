@@ -165,7 +165,7 @@ func getHeatMapForDay(server, day string) (map[string]float64, error) {
 	normalizedHeatMap := make(map[string]float64)
 	for key, value := range heatmap {
 		// calculate percentage between 0 and 100 and round to 2 decimal places
-		normalizedHeatMap[key] = math.Round((float64(max)/float64(value))*10000) / 100
+		normalizedHeatMap[key] = math.Round((float64(value)/float64(max))*10000) / 100
 	}
 
 	return normalizedHeatMap, err
