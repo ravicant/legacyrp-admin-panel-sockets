@@ -63,6 +63,12 @@ func getDuty(server string) OnDutyList {
 	}
 	url := "https://" + server + ".op-framework.com/op-framework/duty.json"
 
+	token := os.Getenv(server)
+	if token == "" {
+		log.Error(server + " - No token defined")
+		return emptyList
+	}
+
 	client := &http.Client{
 		Timeout: 3 * time.Second,
 	}
@@ -83,6 +89,8 @@ func getDuty(server string) OnDutyList {
 		log.Error(server + " - Failed to create request: " + err.Error())
 		return emptyList
 	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := client.Do(req)
 	if err != nil {
