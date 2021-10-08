@@ -105,6 +105,8 @@ func main() {
 	corsConf := cors.DefaultConfig()
 	corsConf.AllowWebSockets = true
 	corsConf.AllowAllOrigins = true
+	corsConf.AllowWildcard = true
+	corsConf.AllowHeaders = append(corsConf.AllowHeaders, "x-requested-with")
 
 	r.Use(gin.Recovery())
 	r.Use(cors.New(corsConf))
@@ -152,7 +154,7 @@ func main() {
 		_, dayErr := time.Parse("2006-01-02", day)
 		rgx := regexp.MustCompile(`(?m)^c\d+s\d+$`)
 		if !rgx.MatchString(server) || dayErr != nil {
-			c.JSON(400, map[string]interface{}{
+			c.JSON(200, map[string]interface{}{
 				"status": false,
 				"error":  "invalid server or day",
 			})
@@ -160,7 +162,7 @@ func main() {
 
 		heat, err := getHeatMapForDay(server, day)
 		if err != nil {
-			c.JSON(400, map[string]interface{}{
+			c.JSON(200, map[string]interface{}{
 				"status": false,
 				"error":  err.Error(),
 			})
