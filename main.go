@@ -161,7 +161,7 @@ func main() {
 			return
 		}
 
-		heat, err := getHeatMapForDay(server, day)
+		cache, err := generateHeatMapForDay(server, day)
 		if err != nil {
 			c.JSON(200, map[string]interface{}{
 				"status": false,
@@ -170,10 +170,7 @@ func main() {
 			return
 		}
 
-		c.JSON(200, map[string]interface{}{
-			"status": true,
-			"data":   heat,
-		})
+		c.File(cache)
 	})
 
 	go startDataLoop()

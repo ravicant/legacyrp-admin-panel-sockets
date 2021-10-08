@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -16,6 +18,8 @@ import (
 var (
 	historyFiles     = make(map[string]*os.File)
 	historyFileMutex sync.Mutex
+
+	heatmapMutex sync.Mutex
 )
 
 func logCoordsForPlayer(server, steam string, player map[string]interface{}) error {
@@ -98,79 +102,105 @@ func doHistoryCleanup() error {
 	})
 }
 
-func getHeatMapForDay(server, day string) (map[string]float64, error) {
-	heatmap := make(map[string]int64)
-	dir := "./history/" + server + "/" + day + "/"
+func generateHeatMapForDay(server, day string) (string, error) {
+	cache := "./cache/heatmap/" + server + "_" + day + ".json"
 
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return nil, errors.New("no data for that day")
-	}
+	heatmapMutex.Lock()
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	stat, err := os.Stat(cache)
+	if os.IsNotExist(err) || time.Now().Sub(stat.ModTime()) > 1*time.Hour {
+		heatmap := make(map[string]int64)
+		dir := "./history/" + server + "/" + day + "/"
+
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			heatmapMutex.Unlock()
+			return cache, errors.New("no data for that day")
 		}
 
-		if info != nil && !info.IsDir() && strings.HasSuffix(path, ".csv") {
-			file, err := os.Open(path)
+		_ = os.MkdirAll(filepath.Dir(cache), 0777)
+
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			defer func() {
-				_ = file.Close()
-			}()
 
-			scanner := bufio.NewScanner(file)
-			index := 0
-			for scanner.Scan() {
-				elements := strings.Split(scanner.Text(), ",")
-
-				// Skip csv header
-				if index == 0 {
-					index++
-					continue
+			if info != nil && !info.IsDir() && strings.HasSuffix(path, ".csv") {
+				file, err := os.Open(path)
+				if err != nil {
+					return err
 				}
-				index++
+				defer func() {
+					_ = file.Close()
+				}()
 
-				if len(elements) == 6 {
-					x, xErr := strconv.ParseFloat(elements[2], 64)
-					y, yErr := strconv.ParseFloat(elements[3], 64)
+				scanner := bufio.NewScanner(file)
+				index := 0
+				for scanner.Scan() {
+					elements := strings.Split(scanner.Text(), ",")
 
-					if xErr == nil && yErr == nil {
-						x, y = resolutionDecrease(x, y, 10)
+					// Skip csv header
+					if index == 0 {
+						index++
+						continue
+					}
+					index++
 
-						key := fmt.Sprintf("%.0f/%.0f", x, y)
+					if len(elements) == 6 {
+						x, xErr := strconv.ParseFloat(elements[2], 64)
+						y, yErr := strconv.ParseFloat(elements[3], 64)
 
-						heatmap[key]++
-					} else {
-						log.Warning("Failed to read x/y coordinate")
+						if xErr == nil && yErr == nil {
+							x, y = resolutionDecrease(x, y, 10)
+
+							key := fmt.Sprintf("%.0f/%.0f", x, y)
+
+							heatmap[key]++
+						} else {
+							log.Warning("Failed to read x/y coordinate")
+						}
 					}
 				}
 			}
+
+			return nil
+		})
+
+		max := int64(0)
+		for _, value := range heatmap {
+			if value > max {
+				max = value
+			}
 		}
 
-		return nil
-	})
+		normalizedHeatMap := make(map[string]float64)
+		for key, value := range heatmap {
+			// calculate percentage between 0 and 100 and round to 2 decimal places
+			normalizedHeatMap[key] = math.Round((float64(value)/float64(max))*10000) / 100
 
-	max := int64(0)
-	for _, value := range heatmap {
-		if value > max {
-			max = value
+			// Just some minor cleanup so we don't have to send such huge amounts of data
+			if normalizedHeatMap[key] < 0.1 {
+				delete(normalizedHeatMap, key)
+			}
+		}
+
+		b, err := json.Marshal(map[string]interface{}{
+			"status": true,
+			"data":   normalizedHeatMap,
+		})
+		if err != nil {
+			heatmapMutex.Unlock()
+			return cache, err
+		}
+
+		err = ioutil.WriteFile(cache, b, 0777)
+		if err != nil {
+			heatmapMutex.Unlock()
+			return cache, err
 		}
 	}
 
-	normalizedHeatMap := make(map[string]float64)
-	for key, value := range heatmap {
-		// calculate percentage between 0 and 100 and round to 2 decimal places
-		normalizedHeatMap[key] = math.Round((float64(value)/float64(max))*10000) / 100
-
-		// Just some minor cleanup so we don't have to send such huge amounts of data
-		if normalizedHeatMap[key] < 1 {
-			delete(normalizedHeatMap, key)
-		}
-	}
-
-	return normalizedHeatMap, err
+	heatmapMutex.Unlock()
+	return cache, nil
 }
 
 func resolutionDecrease(x, y, resolution float64) (float64, float64) {
