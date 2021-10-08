@@ -98,7 +98,7 @@ func doHistoryCleanup() error {
 	})
 }
 
-func getHeatMapForDay(server, day string) (map[string]int64, error) {
+func getHeatMapForDay(server, day string) (map[string]float64, error) {
 	heatmap := make(map[string]int64)
 	dir := "./history/" + server + "/" + day + "/"
 
@@ -162,9 +162,10 @@ func getHeatMapForDay(server, day string) (map[string]int64, error) {
 		}
 	}
 
-	normalizedHeatMap := make(map[string]int64)
+	normalizedHeatMap := make(map[string]float64)
 	for key, value := range heatmap {
-		normalizedHeatMap[key] = int64(math.Round((float64(max) / float64(value)) * 100))
+		// calculate percentage between 0 and 100 and round to 2 decimal places
+		normalizedHeatMap[key] = math.Round((float64(max)/float64(value))*10000) / 100
 	}
 
 	return normalizedHeatMap, err
