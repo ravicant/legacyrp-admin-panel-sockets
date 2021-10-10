@@ -127,6 +127,7 @@ func broadcastToSocket(server string, data []byte, typ string) {
 	connectionsMutex.Lock()
 	connections, ok := serverConnections[server]
 	if !ok || len(connections) == 0 {
+		log.Debug("no connections to " + server)
 		connectionsMutex.Unlock()
 		return
 	}
