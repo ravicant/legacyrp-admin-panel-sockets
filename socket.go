@@ -35,7 +35,7 @@ const (
 )
 
 type Connection struct {
-	websocket.Conn
+	*websocket.Conn
 	Mutex   sync.Mutex
 	Cluster string
 	Type    string
@@ -98,7 +98,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 		serverConnections[server] = make(map[string]*Connection)
 	}
 	serverConnections[server][connectionID] = &Connection{
-		Conn:    *conn,
+		Conn:    conn,
 		Cluster: cluster,
 		Type:    typ,
 	}
