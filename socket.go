@@ -133,6 +133,8 @@ func broadcastToSocket(server string, data []byte, typ string) {
 
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
+			log.Debug(conn.Type + " - " + typ)
+
 			if conn.Type != typ {
 				continue
 			}
@@ -142,6 +144,7 @@ func broadcastToSocket(server string, data []byte, typ string) {
 			_ = conn.WriteMessage(websocket.BinaryMessage, data)
 			conn.Mutex.Unlock()
 		} else {
+			log.Debug("nil connection")
 			delete(serverConnections[server], id)
 		}
 	}
