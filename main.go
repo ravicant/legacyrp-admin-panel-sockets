@@ -118,7 +118,16 @@ func main() {
 			return
 		}
 
-		handleSocket(c.Writer, c.Request, c)
+		handleSocket(c.Writer, c.Request, c, SocketTypeMap)
+	})
+
+	r.GET("/staff-chat", func(c *gin.Context) {
+		if !checkSession(c, false) {
+			log.Info("Rejected unauthorized login")
+			return
+		}
+
+		handleSocket(c.Writer, c.Request, c, SocketTypeStaffChat)
 	})
 
 	r.GET("/token", func(c *gin.Context) {
@@ -175,6 +184,7 @@ func main() {
 
 	go startDataLoop()
 	go startDutyLoop()
+	go startStaffChatLoop()
 
 	cert := os.Getenv("SSL_CERT")
 	key := os.Getenv("SSL_KEY")

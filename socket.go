@@ -29,13 +29,19 @@ var (
 	serverErrorsMutex sync.Mutex
 )
 
+const (
+	SocketTypeMap       = "map"
+	SocketTypeStaffChat = "staff"
+)
+
 type Connection struct {
 	websocket.Conn
 	Mutex   sync.Mutex
 	Cluster string
+	Type    string
 }
 
-func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
+func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ string) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Warning("Failed to set websocket upgrade: " + err.Error())
@@ -94,6 +100,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	serverConnections[server][connectionID] = &Connection{
 		Conn:    *conn,
 		Cluster: cluster,
+		Type:    typ,
 	}
 	connectionsMutex.Unlock()
 
@@ -116,7 +123,7 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context) {
 	}()
 }
 
-func broadcastToSocket(server string, data []byte) {
+func broadcastToSocket(server string, data []byte, typ string) {
 	connectionsMutex.Lock()
 	connections, ok := serverConnections[server]
 	if !ok || len(connections) == 0 {
@@ -126,6 +133,10 @@ func broadcastToSocket(server string, data []byte) {
 
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
+			if conn.Type != typ {
+				continue
+			}
+
 			conn.Mutex.Lock()
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			_ = conn.WriteMessage(websocket.BinaryMessage, data)
@@ -135,6 +146,27 @@ func broadcastToSocket(server string, data []byte) {
 		}
 	}
 	connectionsMutex.Unlock()
+}
+
+func hasSocketConnections(server, typ string) bool {
+	connectionsMutex.Lock()
+	connections, ok := serverConnections[server]
+	if !ok || len(connections) == 0 {
+		connectionsMutex.Unlock()
+		return false
+	}
+
+	for id, conn := range serverConnections[server] {
+		if conn != nil && conn.Type == typ {
+			connectionsMutex.Unlock()
+			return true
+		} else {
+			delete(serverConnections[server], id)
+		}
+	}
+
+	connectionsMutex.Unlock()
+	return false
 }
 
 func killConnection(server string, connectionID string) {
