@@ -59,13 +59,22 @@ func startDataLoop() {
 	for _, s := range servers {
 		go func(server string) {
 			for {
+				if server == "c3s1" {
+					log.Debug("requesting")
+				}
 				data, timeout, info := getData(server)
 
+				if server == "c3s1" {
+					log.Debug("extra")
+				}
 				extraData(server, data)
 
 				var b []byte
 				if data == nil {
 					now := time.Now()
+					if server == "c3s1" {
+						log.Debug("failed")
+					}
 
 					lastErrorMutex.Lock()
 					if lastError[server] == nil || now.Sub(*lastError[server]) > 30*time.Minute {
@@ -100,12 +109,18 @@ func startDataLoop() {
 							"e": last.EMS,
 						},
 					})
+					if server == "c3s1" {
+						log.Debug("success")
+					}
 
 					serverErrorsMutex.Lock()
 					serverErrors[server] = nil
 					serverErrorsMutex.Unlock()
 				}
 
+				if server == "c3s1" {
+					log.Debug("broadcast")
+				}
 				broadcastToSocket(server, gzipBytes(b), SocketTypeMap)
 
 				if timeout != nil {
