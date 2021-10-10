@@ -134,6 +134,7 @@ func broadcastToSocket(server string, data []byte, typ string) {
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
 			if conn.Type != typ {
+				log.Debug("Skipping connection " + typ + " - " + conn.Type)
 				continue
 			}
 
