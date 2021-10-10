@@ -124,20 +124,15 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 }
 
 func broadcastToSocket(server string, data []byte, typ string) {
-	log.Debug("broadcasting to " + server)
-
 	connectionsMutex.Lock()
 	connections, ok := serverConnections[server]
 	if !ok || len(connections) == 0 {
-		log.Debug("no connections to " + server)
 		connectionsMutex.Unlock()
 		return
 	}
 
 	for id, conn := range serverConnections[server] {
 		if conn != nil {
-			log.Debug(conn.Type + " - " + typ)
-
 			if conn.Type != typ {
 				continue
 			}
@@ -147,13 +142,10 @@ func broadcastToSocket(server string, data []byte, typ string) {
 			_ = conn.WriteMessage(websocket.BinaryMessage, data)
 			conn.Mutex.Unlock()
 		} else {
-			log.Debug("nil connection")
 			delete(serverConnections[server], id)
 		}
 	}
 	connectionsMutex.Unlock()
-
-	log.Debug("done " + server)
 }
 
 func hasSocketConnections(server, typ string) bool {
@@ -164,12 +156,10 @@ func hasSocketConnections(server, typ string) bool {
 		return false
 	}
 
-	for id, conn := range serverConnections[server] {
+	for _, conn := range serverConnections[server] {
 		if conn != nil && conn.Type == typ {
 			connectionsMutex.Unlock()
 			return true
-		} else {
-			delete(serverConnections[server], id)
 		}
 	}
 
