@@ -124,6 +124,8 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 }
 
 func broadcastToSocket(server string, data []byte, typ string) {
+	log.Debug("broadcasting to " + server)
+
 	connectionsMutex.Lock()
 	connections, ok := serverConnections[server]
 	if !ok || len(connections) == 0 {
@@ -150,6 +152,8 @@ func broadcastToSocket(server string, data []byte, typ string) {
 		}
 	}
 	connectionsMutex.Unlock()
+
+	log.Debug("done " + server)
 }
 
 func hasSocketConnections(server, typ string) bool {
