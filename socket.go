@@ -97,11 +97,12 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 	if serverConnections[server] == nil {
 		serverConnections[server] = make(map[string]*Connection)
 	}
-	serverConnections[server][connectionID] = &Connection{
+	connection := &Connection{
 		Conn:    conn,
 		Cluster: cluster,
 		Type:    typ,
 	}
+	serverConnections[server][connectionID] = connection
 	connectionsMutex.Unlock()
 
 	go func() {
@@ -113,8 +114,12 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 		for {
 			select {
 			case <-ticker.C:
-				_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				connection.Mutex.Lock()
+				_ = connection.SetWriteDeadline(time.Now().Add(10 * time.Second))
+				err := conn.WriteMessage(websocket.PingMessage, nil)
+				connection.Mutex.Unlock()
+
+				if err != nil {
 					killConnection(server, connectionID)
 					return
 				}
