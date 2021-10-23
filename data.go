@@ -61,17 +61,11 @@ func startDataLoop() {
 			for {
 				data, timeout, info := getData(server)
 
-				if server == "c3s1" {
-					log.Debug("extra")
-				}
 				extraData(server, data)
 
 				var b []byte
 				if data == nil {
 					now := time.Now()
-					if server == "c3s1" {
-						log.Debug("failed")
-					}
 
 					lastErrorMutex.Lock()
 					if lastError[server] == nil || now.Sub(*lastError[server]) > 30*time.Minute {
