@@ -91,6 +91,15 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 	if ok && e != nil {
 		_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(e))
+	} else if typ == SocketTypeStaffChat {
+		lastStaffChatMutex.Lock()
+		b, ok := lastStaffChat[server]
+		lastStaffChatMutex.Unlock()
+
+		if ok {
+			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = conn.WriteMessage(websocket.BinaryMessage, gzipBytes(b))
+		}
 	}
 
 	connectionsMutex.Lock()

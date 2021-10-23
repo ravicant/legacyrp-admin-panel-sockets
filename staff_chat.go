@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,11 @@ type StaffChatEntry struct {
 	Message   string `json:"message"`
 	CreatedAt int64  `json:"createdAt"`
 }
+
+var (
+	lastStaffChat      = make(map[string][]byte)
+	lastStaffChatMutex sync.Mutex
+)
 
 func startStaffChatLoop() {
 	b, _ := ioutil.ReadFile(".env")
@@ -46,11 +52,15 @@ func startStaffChatLoop() {
 
 					b, _ = json.Marshal(staffChatList)
 
+					lastStaffChatMutex.Lock()
+					lastStaffChat[server] = b
+					lastStaffChatMutex.Unlock()
+
 					broadcastToSocket(server, gzipBytes(b), SocketTypeStaffChat)
 
 					time.Sleep(2 * time.Second)
 				} else {
-					time.Sleep(10 * time.Second)
+					time.Sleep(6 * time.Second)
 				}
 			}
 		}(s)
