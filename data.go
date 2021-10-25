@@ -99,6 +99,7 @@ func startDataLoop() {
 							"p": last.Police,
 							"e": last.EMS,
 						},
+						"s": getSteamIdentifiersByTypeAndServer(SocketTypeMap, server),
 					})
 
 					serverErrorsMutex.Lock()
@@ -285,7 +286,7 @@ func extraData(server string, data *Data) {
 					if ok {
 						v["model"] = replace
 					} else {
-						log.Warning(fmt.Sprintf("No hash mapping found for hash %s", key))
+						log.Warning(fmt.Sprintf("No hash mapping found for hash %s (%s, %s)", key, server, id))
 					}
 
 					data.Players[i]["vehicle"] = v
@@ -329,4 +330,32 @@ func extraData(server string, data *Data) {
 		_ = ioutil.WriteFile("afk.json", b, 0777)
 	}
 	lastPositionMutex.Unlock()
+}
+
+func getSteamIdentifiersByTypeAndServer(typ, server string) []string {
+	steamIdentifiers := make([]string, 0)
+
+	connectionsMutex.Lock()
+	connections, ok := serverConnections[server]
+	connectionsMutex.Unlock()
+
+	if !ok {
+		return steamIdentifiers
+	}
+
+	for id, conn := range connections {
+		if conn != nil {
+			if conn.Type != typ {
+				continue
+			}
+
+			conn.Mutex.Lock()
+			steamIdentifiers = append(steamIdentifiers, conn.Steam)
+			conn.Mutex.Unlock()
+		} else {
+			delete(serverConnections[server], id)
+		}
+	}
+
+	return steamIdentifiers
 }
