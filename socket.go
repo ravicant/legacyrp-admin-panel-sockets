@@ -39,6 +39,7 @@ type Connection struct {
 	Mutex   sync.Mutex
 	Cluster string
 	Type    string
+	Steam   string
 }
 
 func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ string) {
@@ -55,6 +56,14 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 		_ = conn.Close()
 		return
 	}
+
+	steam := c.Query("steam")
+	rgx = regexp.MustCompile(`(?m)^steam:.+$`)
+	if !rgx.MatchString(steam) {
+		_ = conn.Close()
+		return
+	}
+
 	connectionID := xid.New().String()
 
 	_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
@@ -110,9 +119,14 @@ func handleSocket(w http.ResponseWriter, r *http.Request, c *gin.Context, typ st
 		Conn:    conn,
 		Cluster: cluster,
 		Type:    typ,
+		Steam:   steam,
 	}
 	serverConnections[server][connectionID] = connection
 	connectionsMutex.Unlock()
+
+	if typ == SocketTypeMap {
+		log.Info("User connected to live-map (" + steam + ", " + cluster + ")")
+	}
 
 	go func() {
 		ticker := time.NewTicker(20 * time.Second)
