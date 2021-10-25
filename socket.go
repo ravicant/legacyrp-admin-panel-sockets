@@ -214,5 +214,5 @@ func killConnection(server string, connectionID string) {
 
 	_ = conn.Close()
 
-	log.Info("Disconnected socket client " + ip)
+	log.Info("Disconnected socket client " + ip + " (" + conn.Type + ", " + conn.Cluster + ", " + conn.Steam + ")")
 }
