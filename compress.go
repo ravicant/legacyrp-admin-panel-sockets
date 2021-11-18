@@ -22,15 +22,16 @@ type CVehicle struct {
 }
 
 type CPlayer struct {
-	AFK            int64       `json:"a,omitempty"`
-	Character      *CCharacter `json:"b,omitempty"`
-	Movement       string      `json:"c,omitempty"`
-	Invisible      bool        `json:"d,omitempty"`
-	InvisibleSince int64       `json:"e,omitempty"`
-	Name           string      `json:"f,omitempty"`
-	Source         int64       `json:"g,omitempty"`
-	Steam          string      `json:"h,omitempty"`
-	Vehicle        *CVehicle   `json:"i,omitempty"`
+	AFK              int64       `json:"a,omitempty"`
+	Character        *CCharacter `json:"b,omitempty"`
+	Movement         string      `json:"c,omitempty"`
+	Invisible        bool        `json:"d,omitempty"`
+	InvisibleSince   int64       `json:"e,omitempty"`
+	Name             string      `json:"f,omitempty"`
+	Source           int64       `json:"g,omitempty"`
+	Steam            string      `json:"h,omitempty"`
+	Vehicle          *CVehicle   `json:"i,omitempty"`
+	FakeDisconnected bool        `json:"j,omitempty"`
 }
 
 func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
@@ -60,15 +61,16 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		}
 
 		compressed[i] = CPlayer{
-			AFK:            0,
-			Character:      c,
-			Movement:       getMovementData(p),
-			Invisible:      getBool("invisible", p),
-			InvisibleSince: getInt64("invisible_since", p),
-			Name:           getString("name", p, false),
-			Source:         getInt64("source", p),
-			Steam:          getString("steamIdentifier", p, false),
-			Vehicle:        v,
+			AFK:              0,
+			Character:        c,
+			Movement:         getMovementData(p),
+			Invisible:        getBool("invisible", p),
+			InvisibleSince:   getInt64("invisible_since", p),
+			Name:             getString("name", p, false),
+			Source:           getInt64("source", p),
+			Steam:            getString("steamIdentifier", p, false),
+			Vehicle:          v,
+			FakeDisconnected: getBool("fakeDisconnected", p),
 		}
 
 		hash := compressed[i].Movement
