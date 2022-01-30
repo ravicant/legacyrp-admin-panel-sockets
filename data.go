@@ -37,6 +37,9 @@ var (
 
 	lastDuty      = make(map[string]OnDutyList)
 	lastDutyMutex sync.Mutex
+
+	loggedHashes      = make(map[string]bool)
+	loggedHashesMutex sync.Mutex
 )
 
 type InfoPackage struct {
@@ -221,6 +224,18 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	return data.Data, nil, nil
 }
 
+func wasHashLogged(hash string) bool {
+	loggedHashesMutex.Lock()
+	res := loggedHashes[hash]
+
+	if !res {
+		loggedHashes[hash] = true
+	}
+	loggedHashesMutex.Unlock()
+
+	return res
+}
+
 func extraData(server string, data *Data) {
 	if data == nil {
 		return
@@ -285,8 +300,8 @@ func extraData(server string, data *Data) {
 
 					if ok {
 						v["model"] = replace
-					} else {
-						log.Warning(fmt.Sprintf("No hash mapping found for hash %s (%s, %s)", key, server, id))
+					} else if !wasHashLogged("hash_" + key) {
+						log.Warning(fmt.Sprintf("No hash mapping found for hash %s", key))
 					}
 
 					data.Players[i]["vehicle"] = v
@@ -298,7 +313,7 @@ func extraData(server string, data *Data) {
 				v["name"], ok = displayMap[modelName]
 				displayMapMutex.Unlock()
 
-				if !ok {
+				if !ok && !wasHashLogged("name_"+modelName) {
 					log.Warning(fmt.Sprintf("No name mapping found for model %s", modelName))
 				}
 			}
