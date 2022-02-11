@@ -146,10 +146,12 @@ func getHistoricLocation(server, steam string, from, till int64) (interface{}, e
 				y, yErr := strconv.ParseFloat(elements[3], 64)
 
 				if tErr == nil && cErr == nil && xErr == nil && yErr == nil {
-					data[timestamp] = map[string]interface{}{
-						"cid": cid,
-						"x":   x,
-						"y":   y,
+					if timestamp >= from && timestamp <= till {
+						data[timestamp] = map[string]interface{}{
+							"cid": cid,
+							"x":   x,
+							"y":   y,
+						}
 					}
 				} else {
 					log.Warning("Failed to read csv entry")
