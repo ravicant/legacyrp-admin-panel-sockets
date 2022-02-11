@@ -118,6 +118,7 @@ func getHistoricLocation(server, steam string, from, till int64) (interface{}, e
 
 		file, err := os.Open(path)
 		if err != nil {
+			heatmapMutex.Unlock()
 			return nil, errors.New("failed to read data")
 		}
 		defer func() {
@@ -155,6 +156,8 @@ func getHistoricLocation(server, steam string, from, till int64) (interface{}, e
 				}
 			}
 		}
+
+		heatmapMutex.Unlock()
 
 		return data, nil
 	}
