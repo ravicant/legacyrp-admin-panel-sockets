@@ -102,6 +102,66 @@ func doHistoryCleanup() error {
 	})
 }
 
+func getHistoricLocation(server, steam string, from, till int64) (interface{}, error) {
+	fromDay := time.Unix(from, 0).Format("2006-01-02")
+	tillDay := time.Unix(till, 0).Format("2006-01-02")
+
+	if fromDay == tillDay {
+		heatmapMutex.Lock()
+
+		path := "./history/" + server + "/" + fromDay + "/" + steam + ".csv"
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			heatmapMutex.Unlock()
+			return nil, errors.New("no data for that day")
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return nil, errors.New("failed to read data")
+		}
+		defer func() {
+			_ = file.Close()
+		}()
+
+		data := make(map[int64]interface{})
+
+		scanner := bufio.NewScanner(file)
+		index := 0
+		for scanner.Scan() {
+			elements := strings.Split(scanner.Text(), ",")
+
+			// Skip csv header
+			if index == 0 {
+				index++
+				continue
+			}
+			index++
+
+			if len(elements) == 6 {
+				timestamp, tErr := strconv.ParseInt(elements[0], 10, 64)
+				cid, cErr := strconv.ParseInt(elements[1], 10, 64)
+				x, xErr := strconv.ParseFloat(elements[2], 64)
+				y, yErr := strconv.ParseFloat(elements[3], 64)
+
+				if tErr == nil && cErr == nil && xErr == nil && yErr == nil {
+					data[timestamp] = map[string]interface{}{
+						"cid": cid,
+						"x":   x,
+						"y":   y,
+					}
+				} else {
+					log.Warning("Failed to read csv entry")
+				}
+			}
+		}
+
+		return data, nil
+	}
+
+	return nil, errors.New("from and till are on different days (:pain:)")
+}
+
 func generateHeatMapForDay(server, day string) (string, error) {
 	cache := "./cache/heatmap/" + server + "_" + day + ".json"
 

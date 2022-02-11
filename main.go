@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -180,6 +181,40 @@ func main() {
 		}
 
 		c.File(cache)
+	})
+
+	r.GET("/history/track/:server/:steam/:from/:till", func(c *gin.Context) {
+		if !checkSession(c, true) {
+			log.Info("Rejected unauthorized login")
+			return
+		}
+
+		server := c.Param("server")
+		steam := c.Param("steam")
+		from, err := strconv.ParseInt(c.Param("from"), 10, 64)
+		till, err2 := strconv.ParseInt(c.Param("till"), 10, 64)
+
+		if err != nil || err2 != nil {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  "invalid from or till",
+			})
+			return
+		}
+
+		data, err := getHistoricLocation(server, steam, from, till)
+
+		if err != nil {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  err.Error(),
+			})
+		} else {
+			c.JSON(200, map[string]interface{}{
+				"status": true,
+				"data":   data,
+			})
+		}
 	})
 
 	go startDataLoop()
