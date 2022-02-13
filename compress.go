@@ -32,6 +32,7 @@ type CPlayer struct {
 	Steam            string      `json:"h,omitempty"`
 	Vehicle          *CVehicle   `json:"i,omitempty"`
 	FakeDisconnected bool        `json:"j,omitempty"`
+	RealName         string      `json:"k,omitempty"`
 }
 
 func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
@@ -67,6 +68,7 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 			Invisible:        getBool("invisible", p),
 			InvisibleSince:   getInt64("invisible_since", p),
 			Name:             getString("name", p, false),
+			RealName:         getString("realName", p, false),
 			Source:           getInt64("source", p),
 			Steam:            getString("steamIdentifier", p, false),
 			Vehicle:          v,

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -83,7 +84,11 @@ func getStaffChat(server string) []StaffChatEntry {
 
 	override := os.Getenv(server + "_map")
 	if override != "" {
-		url = "https://" + override + "/op-framework/staffChat.json"
+		if strings.Contains(override, "localhost") {
+			url = "http://" + override + "/op-framework/staffChat.json"
+		} else {
+			url = "https://" + override + "/op-framework/staffChat.json"
+		}
 
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{

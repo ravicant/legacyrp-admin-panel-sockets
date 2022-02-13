@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -138,7 +139,11 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 
 	override := os.Getenv(server + "_map")
 	if override != "" {
-		url = "https://" + override + "/op-framework/world.json"
+		if strings.Contains(override, "localhost") {
+			url = "http://" + override + "/op-framework/world.json"
+		} else {
+			url = "https://" + override + "/op-framework/world.json"
+		}
 
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{

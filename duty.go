@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -75,7 +76,11 @@ func getDuty(server string) OnDutyList {
 
 	override := os.Getenv(server + "_map")
 	if override != "" {
-		url = "https://" + override + "/op-framework/duty.json"
+		if strings.Contains(override, "localhost") {
+			url = "http://" + override + "/op-framework/duty.json"
+		} else {
+			url = "https://" + override + "/op-framework/duty.json"
+		}
 
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
