@@ -106,65 +106,39 @@ func getHistoricLocation(server, steam string, from, till int64) (interface{}, e
 	fromDay := time.Unix(from, 0).Format("2006-01-02")
 	tillDay := time.Unix(till, 0).Format("2006-01-02")
 
-	if fromDay == tillDay {
-		heatmapMutex.Lock()
+	path := "./history/" + server + "/" + fromDay + "/" + steam + ".csv"
 
-		path := "./history/" + server + "/" + fromDay + "/" + steam + ".csv"
+	data := make(map[int64]interface{})
 
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			heatmapMutex.Unlock()
-			return nil, errors.New("no data for that day")
-		}
-
-		file, err := os.Open(path)
-		if err != nil {
-			heatmapMutex.Unlock()
-			return nil, errors.New("failed to read data")
-		}
-		defer func() {
-			_ = file.Close()
-		}()
-
-		data := make(map[int64]interface{})
-
-		scanner := bufio.NewScanner(file)
-		index := 0
-		for scanner.Scan() {
-			elements := strings.Split(scanner.Text(), ",")
-
-			// Skip csv header
-			if index == 0 {
-				index++
-				continue
-			}
-			index++
-
-			if len(elements) == 6 {
-				timestamp, tErr := strconv.ParseInt(elements[0], 10, 64)
-				cid, cErr := strconv.ParseInt(elements[1], 10, 64)
-				x, xErr := strconv.ParseFloat(elements[2], 64)
-				y, yErr := strconv.ParseFloat(elements[3], 64)
-
-				if tErr == nil && cErr == nil && xErr == nil && yErr == nil {
-					if timestamp >= from && timestamp <= till {
-						data[timestamp] = map[string]interface{}{
-							"cid": cid,
-							"x":   x,
-							"y":   y,
-						}
-					}
-				} else {
-					log.Warning("Failed to read csv entry")
-				}
+	err := readHistoric(path, func(entry HistoricEntry) {
+		if entry.Timestamp >= from && entry.Timestamp <= till {
+			data[entry.Timestamp] = map[string]interface{}{
+				"cid": entry.CID,
+				"x":   entry.X,
+				"y":   entry.Y,
 			}
 		}
+	})
 
-		heatmapMutex.Unlock()
-
-		return data, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New("from and till are on different days (:pain:)")
+	if fromDay != tillDay {
+		path = "./history/" + server + "/" + tillDay + "/" + steam + ".csv"
+
+		err = readHistoric(path, func(entry HistoricEntry) {
+			if entry.Timestamp >= from && entry.Timestamp <= till {
+				data[entry.Timestamp] = map[string]interface{}{
+					"cid": entry.CID,
+					"x":   entry.X,
+					"y":   entry.Y,
+				}
+			}
+		})
+	}
+
+	return data, err
 }
 
 func generateHeatMapForDay(server, day string) (string, error) {

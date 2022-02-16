@@ -202,6 +202,16 @@ func main() {
 			return
 		}
 
+		diff := till - from
+
+		if diff < 1 || diff > 6*60*60 {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  "invalid from / till (maximum 6 hour difference)",
+			})
+			return
+		}
+
 		data, err := getHistoricLocation(server, steam, from, till)
 
 		if err != nil {
