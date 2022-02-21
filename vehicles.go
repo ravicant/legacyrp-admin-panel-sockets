@@ -32,6 +32,11 @@ func loadVehicleJSON(file string, dst *VehicleJSON) error {
 func (v *VehicleJSON) Find(hash string) (bool, string, string) {
 	v.mutex.Lock()
 
+	if v.models == nil || v.labels == nil {
+		v.models = make(map[string]string)
+		v.labels = make(map[string]string)
+	}
+
 	res, ok := v.models[hash]
 	if ok {
 		label := v.labels[hash]
