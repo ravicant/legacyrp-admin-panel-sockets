@@ -32,6 +32,8 @@ var (
 	oneTimeTokens     = make(map[string]OTT)
 	oneTimeTokenMutex sync.Mutex
 
+	vehicleAddonMap = VehicleJSON{}
+
 	SessionDirectory string
 )
 
@@ -71,6 +73,13 @@ func main() {
 	err = loadJSON("display-map.json", &displayMap)
 	if err != nil {
 		log.Error("Failed to load display-map.json")
+		log.ErrorE(err)
+		return
+	}
+
+	err = loadVehicleJSON("vehicles.json", &vehicleAddonMap)
+	if err != nil {
+		log.Error("Failed to load vehicles.json")
 		log.ErrorE(err)
 		return
 	}
