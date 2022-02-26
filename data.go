@@ -118,7 +118,13 @@ func startDataLoop() {
 					time.Sleep(*timeout)
 				}
 
-				time.Sleep(1 * time.Second)
+				isSlow := os.Getenv(server+"_speed") == "slow"
+
+				if isSlow {
+					time.Sleep(5 * time.Second)
+				} else {
+					time.Sleep(1 * time.Second)
+				}
 			}
 		}(s)
 	}
@@ -131,10 +137,16 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 		return nil, nil, &InfoPackage{"Missing token", http.StatusNotImplemented}
 	}
 
+	isSlow := os.Getenv(server+"_speed") == "slow"
+
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
 
 	client := &http.Client{
 		Timeout: 3 * time.Second,
+	}
+
+	if isSlow {
+		client.Timeout = 5 * time.Second
 	}
 
 	override := os.Getenv(server + "_map")

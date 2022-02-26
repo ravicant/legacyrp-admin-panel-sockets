@@ -51,7 +51,13 @@ func startDutyLoop() {
 				lastDuty[server] = onDutyList
 				lastDutyMutex.Unlock()
 
-				time.Sleep(15 * time.Second)
+				isSlow := os.Getenv(server+"_speed") == "slow"
+
+				if isSlow {
+					time.Sleep(30 * time.Second)
+				} else {
+					time.Sleep(15 * time.Second)
+				}
 			}
 		}(s)
 	}
@@ -62,6 +68,9 @@ func getDuty(server string) OnDutyList {
 		Police: []string{},
 		EMS:    []string{},
 	}
+
+	isSlow := os.Getenv(server+"_speed") == "slow"
+
 	url := "https://" + server + ".op-framework.com/op-framework/duty.json"
 
 	token := os.Getenv(server)
@@ -72,6 +81,10 @@ func getDuty(server string) OnDutyList {
 
 	client := &http.Client{
 		Timeout: 3 * time.Second,
+	}
+
+	if isSlow {
+		client.Timeout = 5 * time.Second
 	}
 
 	override := os.Getenv(server + "_map")

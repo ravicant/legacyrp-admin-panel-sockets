@@ -48,6 +48,8 @@ func startStaffChatLoop() {
 	for _, s := range servers {
 		go func(server string) {
 			for {
+				isSlow := os.Getenv(server+"_speed") == "slow"
+
 				if hasSocketConnections(server, SocketTypeStaffChat) {
 					staffChatList := getStaffChat(server)
 
@@ -59,9 +61,17 @@ func startStaffChatLoop() {
 
 					broadcastToSocket(server, gzipBytes(b), SocketTypeStaffChat)
 
-					time.Sleep(2 * time.Second)
+					if isSlow {
+						time.Sleep(10 * time.Second)
+					} else {
+						time.Sleep(2 * time.Second)
+					}
 				} else {
-					time.Sleep(6 * time.Second)
+					if isSlow {
+						time.Sleep(20 * time.Second)
+					} else {
+						time.Sleep(5 * time.Second)
+					}
 				}
 			}
 		}(s)
@@ -70,6 +80,9 @@ func startStaffChatLoop() {
 
 func getStaffChat(server string) []StaffChatEntry {
 	emptyList := make([]StaffChatEntry, 0)
+
+	isSlow := os.Getenv(server+"_speed") == "slow"
+
 	url := "https://" + server + ".op-framework.com/op-framework/staffChat.json"
 
 	token := os.Getenv(server)
@@ -80,6 +93,10 @@ func getStaffChat(server string) []StaffChatEntry {
 
 	client := &http.Client{
 		Timeout: 3 * time.Second,
+	}
+
+	if isSlow {
+		client.Timeout = 5 * time.Second
 	}
 
 	override := os.Getenv(server + "_map")
