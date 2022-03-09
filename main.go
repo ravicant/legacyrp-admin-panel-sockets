@@ -23,12 +23,6 @@ var (
 	ginLogger gin.HandlerFunc
 	log       logger.ShortLogger
 
-	vehicleMap      map[string]string
-	vehicleMapMutex sync.Mutex
-
-	displayMap      map[string]string
-	displayMapMutex sync.Mutex
-
 	oneTimeTokens     = make(map[string]OTT)
 	oneTimeTokenMutex sync.Mutex
 
@@ -62,20 +56,6 @@ func main() {
 	}
 
 	log.Debug("Using '" + SessionDirectory + "' for sessions")
-
-	err = loadJSON("vehicle-map.json", &vehicleMap)
-	if err != nil {
-		log.Error("Failed to load vehicle-map.json")
-		log.ErrorE(err)
-		return
-	}
-
-	err = loadJSON("display-map.json", &displayMap)
-	if err != nil {
-		log.Error("Failed to load display-map.json")
-		log.ErrorE(err)
-		return
-	}
 
 	err = loadVehicleJSON("vehicles.json", &vehicleAddonMap)
 	if err != nil {

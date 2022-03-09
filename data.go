@@ -306,44 +306,20 @@ func extraData(server string, data *Data) {
 			if ok && v != nil {
 				hash, ok := v["model"].(float64)
 
-				var modelName string
 				if ok {
 					key := fmt.Sprintf("%.0f", hash)
 
-					vehicleMapMutex.Lock()
-					replace, ok := vehicleMap[key]
-					modelName = replace
-					vehicleMapMutex.Unlock()
+					found, modelName := vehicleAddonMap.Find(key)
 
-					if ok {
-						v["model"] = replace
+					if found {
+						v["model"] = modelName
 					} else {
-						ok, model, _ := vehicleAddonMap.Find(key)
-
-						if ok {
-							v["model"] = model
-						} else if !wasHashLogged("hash_" + key) {
-							log.Warning(fmt.Sprintf("No hash mapping found for hash %s", key))
-						}
+						log.Warning(fmt.Sprintf("No hash mapping found for hash %s", key))
 					}
 
 					data.Players[i]["vehicle"] = v
 				} else if model, ok := v["model"].(string); ok {
-					modelName = model
-				}
-
-				displayMapMutex.Lock()
-				v["name"], ok = displayMap[modelName]
-				displayMapMutex.Unlock()
-
-				if !ok {
-					ok, _, label := vehicleAddonMap.Find(fmt.Sprint(joaat(modelName)))
-
-					if ok {
-						v["name"] = label
-					} else if !wasHashLogged("name_" + modelName) {
-						log.Warning(fmt.Sprintf("No name mapping found for model %s", modelName))
-					}
+					v["model"] = model
 				}
 			}
 		}

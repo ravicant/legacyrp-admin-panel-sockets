@@ -2,22 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"strconv"
 	"sync"
 )
 
 type VehicleJSON struct {
-	Data struct {
-		Addon []struct {
-			Model string `json:"modelName"`
-			Label string `json:"label"`
-		} `json:"addon"`
-	} `json:"data"`
+	Data  map[string]string `json:"data"`
 	mutex sync.Mutex
-
-	models map[string]string
-	labels map[string]string
 }
 
 func loadVehicleJSON(file string, dst *VehicleJSON) error {
@@ -29,39 +21,17 @@ func loadVehicleJSON(file string, dst *VehicleJSON) error {
 	return json.Unmarshal(b, dst)
 }
 
-func (v *VehicleJSON) Find(hash string) (bool, string, string) {
+func (v *VehicleJSON) Find(hash string) (bool, string) {
+	_, err := strconv.ParseInt(hash, 10, 64)
+	if err != nil {
+		return true, hash
+	}
+
 	v.mutex.Lock()
-
-	if v.models == nil || v.labels == nil {
-		v.models = make(map[string]string)
-		v.labels = make(map[string]string)
-	}
-
-	res, ok := v.models[hash]
-	if ok {
-		label := v.labels[hash]
-
-		v.mutex.Unlock()
-
-		return true, res, label
-	}
-
-	for _, vehicle := range v.Data.Addon {
-		h := fmt.Sprint(joaat(vehicle.Model))
-
-		v.models[h] = vehicle.Model
-		v.labels[h] = vehicle.Label
-
-		if h == hash {
-			v.mutex.Unlock()
-
-			return true, vehicle.Model, vehicle.Label
-		}
-	}
-
+	res, ok := v.Data[hash]
 	v.mutex.Unlock()
 
-	return false, "", ""
+	return ok, res
 }
 
 func joaat(key string) (hash uint32) {
