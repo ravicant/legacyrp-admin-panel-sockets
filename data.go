@@ -241,18 +241,6 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	return data.Data, nil, nil
 }
 
-func wasHashLogged(hash string) bool {
-	loggedHashesMutex.Lock()
-	res := loggedHashes[hash]
-
-	if !res {
-		loggedHashes[hash] = true
-	}
-	loggedHashesMutex.Unlock()
-
-	return res
-}
-
 func extraData(server string, data *Data) {
 	if data == nil {
 		return
@@ -279,17 +267,18 @@ func extraData(server string, data *Data) {
 		id := player["steamIdentifier"].(string)
 		validIDs[id] = true
 
-		invisible, ok := player["invisible"].(bool)
+		character, ok := player["character"].(map[string]interface{})
+
 		if ok {
-			id := player["steamIdentifier"].(string)
+			flags := getCharacterFlags(character)
 
 			lastInvisibleMutex.Lock()
 			t, ok := lastInvisible[server][id]
 
-			if invisible && !ok {
+			if flags.Invisible && !ok {
 				lastInvisible[server][id] = now
 				t = now
-			} else if !invisible && ok {
+			} else if !flags.Invisible && ok {
 				delete(lastInvisible[server], id)
 			} else if t == 0 {
 				t = now
