@@ -8,10 +8,9 @@ import (
 )
 
 type CCharacter struct {
-	Dead     bool   `json:"a,omitempty"`
+	Flags    int64  `json:"a,omitempty"`
 	FullName string `json:"b,omitempty"`
 	ID       int64  `json:"c,omitempty"`
-	InShell  bool   `json:"d,omitempty"`
 }
 
 type CVehicle struct {
@@ -22,17 +21,15 @@ type CVehicle struct {
 }
 
 type CPlayer struct {
-	AFK              int64       `json:"a,omitempty"`
-	Character        *CCharacter `json:"b,omitempty"`
-	Movement         string      `json:"c,omitempty"`
-	Invisible        bool        `json:"d,omitempty"`
-	InvisibleSince   int64       `json:"e,omitempty"`
-	Name             string      `json:"f,omitempty"`
-	Source           int64       `json:"g,omitempty"`
-	Steam            string      `json:"h,omitempty"`
-	Vehicle          *CVehicle   `json:"i,omitempty"`
-	FakeDisconnected bool        `json:"j,omitempty"`
-	IdentityOverride bool        `json:"k,omitempty"`
+	AFK            int64       `json:"a,omitempty"`
+	Character      *CCharacter `json:"b,omitempty"`
+	Movement       string      `json:"c,omitempty"`
+	Flags          int64       `json:"d,omitempty"`
+	InvisibleSince int64       `json:"e,omitempty"`
+	Name           string      `json:"f,omitempty"`
+	Source         int64       `json:"g,omitempty"`
+	Steam          string      `json:"h,omitempty"`
+	Vehicle        *CVehicle   `json:"i,omitempty"`
 }
 
 func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
@@ -43,10 +40,9 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		var c *CCharacter
 		if character != nil {
 			c = &CCharacter{
-				Dead:     getBool("dead", character),
+				Flags:    getInt64("flags", character),
 				FullName: getString("fullName", character, false),
 				ID:       getInt64("id", character),
-				InShell:  getBool("inShell", character),
 			}
 		}
 
@@ -62,17 +58,15 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		}
 
 		compressed[i] = CPlayer{
-			AFK:              0,
-			Character:        c,
-			Movement:         getMovementData(p),
-			Invisible:        getBool("invisible", p),
-			InvisibleSince:   getInt64("invisible_since", p),
-			Name:             getString("name", p, false),
-			IdentityOverride: getBool("identityOverride", p),
-			Source:           getInt64("source", p),
-			Steam:            getString("steamIdentifier", p, false),
-			Vehicle:          v,
-			FakeDisconnected: getBool("fakeDisconnected", p),
+			AFK:            0,
+			Character:      c,
+			Movement:       getMovementData(p),
+			Flags:          getInt64("flags", p),
+			InvisibleSince: getInt64("invisible_since", p),
+			Name:           getString("name", p, false),
+			Source:         getInt64("source", p),
+			Steam:          getString("steamIdentifier", p, false),
+			Vehicle:        v,
 		}
 
 		hash := compressed[i].Movement
