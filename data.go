@@ -142,11 +142,11 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 	url := "https://" + server + ".op-framework.com/op-framework/world.json"
 
 	client := &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: 10 * time.Second,
 	}
 
 	if isSlow {
-		client.Timeout = 5 * time.Second
+		client.Timeout = 15 * time.Second
 	}
 
 	override := os.Getenv(server + "_map")

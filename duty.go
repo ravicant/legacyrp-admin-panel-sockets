@@ -80,11 +80,11 @@ func getDuty(server string) OnDutyList {
 	}
 
 	client := &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: 10 * time.Second,
 	}
 
 	if isSlow {
-		client.Timeout = 5 * time.Second
+		client.Timeout = 15 * time.Second
 	}
 
 	override := os.Getenv(server + "_map")
