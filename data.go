@@ -93,15 +93,15 @@ func startDataLoop() {
 					lastDutyMutex.Unlock()
 
 					if !ok {
-						last.Police = []string{}
-						last.EMS = []string{}
+						last.Police = []OnDutyPlayer{}
+						last.EMS = []OnDutyPlayer{}
 					}
 
 					b, _ = json.Marshal(map[string]interface{}{
 						"p": CompressPlayers(server, data.Players),
-						"d": map[string][]string{
-							"p": last.Police,
-							"e": last.EMS,
+						"d": map[string][]CDutyPlayer{
+							"p": CompressDutyPlayers(last.Police),
+							"e": CompressDutyPlayers(last.EMS),
 						},
 						"s": getSteamIdentifiersByTypeAndServer(SocketTypeMap, server),
 					})

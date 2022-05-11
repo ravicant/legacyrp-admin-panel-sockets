@@ -16,8 +16,8 @@ import (
 type DutyResponse struct {
 	StatusCode int64 `json:"statusCode"`
 	Data       struct {
-		Police []string `json:"Law Enforcement"`
-		EMS    []string `json:"Medical"`
+		Police []OnDutyPlayer `json:"Law Enforcement"`
+		EMS    []OnDutyPlayer `json:"Medical"`
 	} `json:"data"`
 }
 type EmptyDutyResponse struct {
@@ -25,9 +25,15 @@ type EmptyDutyResponse struct {
 	Data       []interface{} `json:"data"`
 }
 
+type OnDutyPlayer struct {
+	Department      string `json:"department"`
+	CharacterId     int64  `json:"characterId"`
+	SteamIdentifier string `json:"steamIdentifier"`
+}
+
 type OnDutyList struct {
-	Police []string `json:"police"`
-	EMS    []string `json:"ems"`
+	Police []OnDutyPlayer `json:"police"`
+	EMS    []OnDutyPlayer `json:"ems"`
 }
 
 func startDutyLoop() {
@@ -65,8 +71,8 @@ func startDutyLoop() {
 
 func getDuty(server string) OnDutyList {
 	emptyList := OnDutyList{
-		Police: []string{},
-		EMS:    []string{},
+		Police: []OnDutyPlayer{},
+		EMS:    []OnDutyPlayer{},
 	}
 
 	isSlow := os.Getenv(server+"_speed") == "slow"

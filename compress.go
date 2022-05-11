@@ -32,6 +32,12 @@ type CPlayer struct {
 	Vehicle        *CVehicle   `json:"i,omitempty"`
 }
 
+type CDutyPlayer struct {
+	Department      string `json:"a,omitempty"`
+	CharacterId     int64  `json:"b,omitempty"`
+	SteamIdentifier string `json:"c,omitempty"`
+}
+
 func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
 	compressed := make([]CPlayer, len(players))
 
@@ -85,6 +91,20 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		lastPositionMutex.Unlock()
 
 		compressed[i].AFK = now - pos.Time
+	}
+
+	return compressed
+}
+
+func CompressDutyPlayers(players []OnDutyPlayer) []CDutyPlayer {
+	compressed := make([]CDutyPlayer, len(players))
+
+	for i, p := range players {
+		compressed[i] = CDutyPlayer{
+			Department:      p.Department,
+			CharacterId:     p.CharacterId,
+			SteamIdentifier: p.SteamIdentifier,
+		}
 	}
 
 	return compressed
