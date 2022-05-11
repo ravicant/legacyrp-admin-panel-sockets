@@ -23,7 +23,7 @@ type StaffChatEntry struct {
 	User struct {
 		SteamIdentifier string `json:"steamIdentifier"`
 		PlayerName      string `json:"playerName"`
-		Source          int64  `json:"source"`
+		Source          *int64 `json:"source"`
 	} `json:"user"`
 	Type      string `json:"type"`
 	Message   string `json:"message"`
@@ -135,6 +135,8 @@ func getStaffChat(server string) []StaffChatEntry {
 		log.Error(server + " - Failed to read body: " + err.Error())
 		return emptyList
 	}
+
+	body = bytes.ReplaceAll(body, []byte("\"source\":false"), []byte("\"source\":null"))
 
 	var list StaffChatResponse
 	err = json.Unmarshal(body, &list)
