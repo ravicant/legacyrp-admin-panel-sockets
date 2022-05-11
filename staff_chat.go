@@ -24,6 +24,7 @@ type StaffChatEntry struct {
 		SteamIdentifier string `json:"steamIdentifier"`
 		PlayerName      string `json:"playerName"`
 	} `json:"user"`
+	Type      string `json:"type"`
 	Message   string `json:"message"`
 	CreatedAt int64  `json:"createdAt"`
 }
