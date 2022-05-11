@@ -23,6 +23,7 @@ type StaffChatEntry struct {
 	User struct {
 		SteamIdentifier string `json:"steamIdentifier"`
 		PlayerName      string `json:"playerName"`
+		Source          int64  `json:"source"`
 	} `json:"user"`
 	Type      string `json:"type"`
 	Message   string `json:"message"`
