@@ -136,6 +136,7 @@ func getStaffChat(server string) []StaffChatEntry {
 		return emptyList
 	}
 
+	body = bytes.ReplaceAll(body, []byte("{}"), []byte("[]"))
 	body = bytes.ReplaceAll(body, []byte("\"source\":false"), []byte("\"source\":0"))
 
 	var list StaffChatResponse
