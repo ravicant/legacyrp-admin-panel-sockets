@@ -139,7 +139,7 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 
 	isSlow := os.Getenv(server+"_speed") == "slow"
 
-	url := "https://" + server + ".op-framework.com/op-framework/world.json"
+	url := "http://" + server + ".op-framework.com/op-framework/world.json"
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -154,7 +154,7 @@ func getData(server string) (*Data, *time.Duration, *InfoPackage) {
 		if strings.Contains(override, "localhost") {
 			url = "http://" + override + "/op-framework/world.json"
 		} else {
-			url = "https://" + override + "/op-framework/world.json"
+			url = "http://" + override + "/op-framework/world.json"
 		}
 
 		client.Transport = &http.Transport{

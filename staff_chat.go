@@ -85,7 +85,7 @@ func getStaffChat(server string) []StaffChatEntry {
 
 	isSlow := os.Getenv(server+"_speed") == "slow"
 
-	url := "https://" + server + ".op-framework.com/op-framework/staffChat.json"
+	url := "http://" + server + ".op-framework.com/op-framework/staffChat.json"
 
 	token := os.Getenv(server)
 	if token == "" {
@@ -106,7 +106,7 @@ func getStaffChat(server string) []StaffChatEntry {
 		if strings.Contains(override, "localhost") {
 			url = "http://" + override + "/op-framework/staffChat.json"
 		} else {
-			url = "https://" + override + "/op-framework/staffChat.json"
+			url = "http://" + override + "/op-framework/staffChat.json"
 		}
 
 		client.Transport = &http.Transport{

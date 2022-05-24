@@ -77,7 +77,7 @@ func getDuty(server string) OnDutyList {
 
 	isSlow := os.Getenv(server+"_speed") == "slow"
 
-	url := "https://" + server + ".op-framework.com/op-framework/duty.json"
+	url := "http://" + server + ".op-framework.com/op-framework/duty.json"
 
 	token := os.Getenv(server)
 	if token == "" {
@@ -98,7 +98,7 @@ func getDuty(server string) OnDutyList {
 		if strings.Contains(override, "localhost") {
 			url = "http://" + override + "/op-framework/duty.json"
 		} else {
-			url = "https://" + override + "/op-framework/duty.json"
+			url = "http://" + override + "/op-framework/duty.json"
 		}
 
 		client.Transport = &http.Transport{
